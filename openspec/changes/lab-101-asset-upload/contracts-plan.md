@@ -1,23 +1,41 @@
-# LAB-101 Contract Plan — Draft
+# LAB-101 Contract Design and Review
 
-**Status:** Proposal; contract implementation and coding are blocked pending review.
+**Status:** DRAFT — machine-readable contracts submitted for review; feature implementation remains blocked.
+**Architecture decisions:** D01–D06 approved by owner; see `decision-register.md`.
+**Issue:** https://github.com/petarnenov/atlas-workspace-lab/issues/2
 
-## HTTP API ownership
-- Portal UI → workspace-api: `POST /api/v1/assets` (multipart PDF) and `GET /api/v1/assets/{assetId}`.
-- Workspace API → asset-service: internal versioned upload and status endpoints.
-- Successful upload response: HTTP 202, `assetId`, `status=PENDING`, optional `correlationId`.
-- Status response: `assetId`, `status`, `version`, `createdAt`, `updatedAt`, sanitized `errorCode` (on failure).
-- Required error cases: unsupported media (415), too large (413), invalid file (400), unauthenticated (401), forbidden tenant/resource (403), missing asset (404), internal dependency failure (5xx). Avoid resource existence leaks from unauthorized status lookups.
+## Submitted artifacts
+- `contracts/openapi/asset-api.v1.json` — OpenAPI 3.1, version 1.0.0
+- `contracts/asyncapi/asset-events.v1.json` — AsyncAPI 3.0, version 1.0.0
+- `scripts/check-contracts.mjs` — local invariant checks
+- `.github/workflows/contracts.yml` — OpenAPI and AsyncAPI standard validation using their CLI tools
 
-## Events
-- `asset.uploaded.v1`: `eventId`, `assetId`, `tenantId`, `objectKey`, `schemaVersion`, `occurredAt`, `correlationId`.
-- `asset.processed.v1`: `eventId`, `assetId`, `tenantId`, `outcome` (COMPLETED/FAILED), `errorCode?`, `schemaVersion`, `occurredAt`, `correlationId`.
-- Transport and retry conventions remain to be finalized when producing machine-valid OpenAPI/AsyncAPI definitions.
+## HTTP contract
+`workspace-api` owns the public boundary:
+- `POST /api/v1/assets` multipart PDF, responds `202` with `assetId`, `PENDING`, `correlationId`.
+- `GET /api/v1/assets/{assetId}` returns tenant-authorized status, optimistic state `version`, timestamps and sanitized error code.
+- Proposed `Idempotency-Key` allows repeat-safe upload attempts.
+- Explicit error responses include 400, 401, 403, 404, 413, 415, 500 and 503 as relevant.
+- Bearer security scheme describes **synthetic local demo identity only**, not production auth.
 
-## Contract test expectations
-1. Consumer compatibility for HTTP status and error payloads.
-2. Validation of required event metadata and schemaVersion.
-3. Duplicate event handling and out-of-order outcome rejection.
-4. Cross-tenant access refusal and untrusted identity spoofing tests.
+The asset service internal HTTP interface and its stricter trusted-service identity contract must be specified before implementing the BFF-to-asset-service call. The public contract alone is insufficient for that step.
 
-**Next:** Once decisions are accepted, author versioned machine-valid contracts in `contracts/openapi` and `contracts/asyncapi` as a spec-only review before feature implementation.
+## Kafka contract
+This document is a logical interface inventory (both service perspectives); it is **not** intended to model a single deployable application:
+- `asset.uploaded.v1`: AssetUploaded from asset-service to processing-worker.
+- `asset.processed.v1`: AssetProcessed from processing-worker to asset-service.
+- Both carry `eventId`, `assetId`, `tenantId`, `schemaVersion`, `occurredAt`, `correlationId`.
+- The uploaded event carries an opaque `objectKey`; outcome carries COMPLETED/FAILED and optional errorCode.
+
+## Remaining contract review topics
+1. Internal asset service HTTP contract and trusted identity forwarding.
+2. Document bytes vs metadata persistence ordering and failure compensation.
+3. Which service enforces the idempotency key and its retention window.
+4. Version/state transition semantics under duplicate and out-of-order messages.
+5. The precise test identity token issuance and signing method.
+6. Distinguish 403 and 404 to avoid cross-tenant resource existence leaks.
+7. Producer and consumer conformance tests, plus rollback/version migration policy.
+8. Confirm OpenAPI/AsyncAPI validation jobs are green.
+
+## Gate
+D01–D06 approval is recorded, but **no implementation authorization** is implied until this contract review is complete and the exact OpenSpec revision is approved for execution.
