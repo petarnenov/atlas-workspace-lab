@@ -1,0 +1,10 @@
+{
+  "name": "atlas-workspace-lab",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Public TypeScript + Java polyglot monorepo SDD PoC",
+  "scripts": {
+    "check:scaffold": "node scripts/check-scaffold.mjs"
+  },
+  "packageManager": "pnpm@10.0.0"
+}
