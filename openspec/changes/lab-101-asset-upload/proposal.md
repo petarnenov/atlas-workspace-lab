@@ -20,3 +20,15 @@ Validate spec-driven cross-service development using React/TypeScript and Java w
 
 ## Human approval gate
 Do not implement LAB-101 until proposal, specification, design and tasks have been reviewed and approved by the repository owner. Changes beyond approved scope require renewed approval.
+
+## Architecture principles required for approval
+- P02: independent service ownership and data writes
+- P03: OpenAPI and AsyncAPI contracts approved first
+- P05: minimal local dependencies, no speculative platform
+- P06/P08/P10: input security, access controls and synthetic-only data
+- P12: owned metadata and immutable processing inputs
+- P15: human review of the exact OpenSpec change revision
+- P16: idempotent event processing and explicit retries
+- P19/P20: measured test evidence and controlled versions
+
+Refer to `docs/architecture/principles.md` and `docs/architecture/compliance-matrix.md` for all P01–P21.
