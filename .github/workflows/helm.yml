@@ -41,8 +41,8 @@ jobs:
       - name: Start dev parser for sequential profile verification on a four CPU runner
         run: |
           node --input-type=module <<'JS'
-          import {upgrade,values} from './scripts/helm/runtime.mjs';
-          upgrade('prod','docling-parser',{...values('prod','docling-parser'),stopped:true});
+          import {upgrade,values,applications} from './scripts/helm/runtime.mjs';
+          for(const service of applications) upgrade('prod',service,{...values('prod',service),stopped:true});
           upgrade('dev','docling-parser');
           JS
       - run: pnpm exec playwright install --with-deps chromium

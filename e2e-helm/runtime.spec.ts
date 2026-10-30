@@ -16,8 +16,9 @@ for (const env of ["dev", "prod"] as const)
     test.use({ baseURL: `http://127.0.0.1:${env === "dev" ? 5173 : 5174}` });
     test.afterAll(() => {
       if (env === "dev" && process.env.ATLAS_SEQUENTIAL_PARSER_TESTS === "1") {
-        helmRuntime.upgrade("dev","docling-parser",{...helmRuntime.values("dev","docling-parser"),stopped:true});
-        helmRuntime.upgrade("prod","docling-parser");
+        for(const service of helmRuntime.applications)
+          helmRuntime.upgrade("dev",service,{...helmRuntime.values("dev",service),stopped:true});
+        helmRuntime.up("prod");
       }
     });
     const kubectl = (args: string[], options?: any) =>
