@@ -1,5 +1,5 @@
 node_modules/
-.nx/cache/
+.nx/
 dist/
 coverage/
 .gradle/
@@ -10,3 +10,6 @@ coverage/
 .env.*
 !.env.example
 .DS_Store
+.local/
+playwright-report/
+test-results/

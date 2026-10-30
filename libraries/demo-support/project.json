@@ -1,0 +1,35 @@
+{
+  "name": "demo-support",
+  "root": "libraries/demo-support",
+  "projectType": "library",
+  "implicitDependencies": [],
+  "targets": {
+    "build": {
+      "command": "./gradlew :demo-support:assemble --no-daemon",
+      "inputs": [
+        "default",
+        "javaBuild",
+        "^default"
+      ],
+      "outputs": [
+        "{projectRoot}/build/libs"
+      ]
+    },
+    "test": {
+      "command": "./gradlew :demo-support:test --no-daemon",
+      "inputs": [
+        "default",
+        "javaBuild",
+        "^default"
+      ]
+    },
+    "coverage": {
+      "command": "node scripts/local/run.mjs ./gradlew :demo-support:test :demo-support:jacocoTestCoverageVerification -Pintegration --no-daemon",
+      "inputs": [
+        "default",
+        "javaBuild",
+        "^default"
+      ]
+    }
+  }
+}

@@ -118,3 +118,13 @@ ownership is approved, specify a unique input event ID, immutable output event
 ID/payload, publication state, exclusive processing lease, bounded retry state,
 and retention at least as long as broker replay; test crashes before/after
 publication and expiration of leases.
+
+## Execution clarifications within approved failure semantics
+
+A Kafka listener database/handler failure stops that listener container without
+recovering by log-and-commit. An operator fixes the dependency and restarts the
+component; the unacknowledged input is replayed. This avoids Spring's default
+exhausted-listener recovery dropping an input before its checkpoint is durable.
+Object processing/publication retries remain separately bounded to three.
+The S3-compatible RustFS replacement and unchanged ownership are recorded in
+`openspec/changes/lab-101-s3-storage/` under explicit owner authorization.
