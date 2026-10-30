@@ -111,6 +111,8 @@ test("identity and tenant denial plus idempotency hold in Kubernetes", async ({
             })
           ).json()
         ).status,
+      // The serial worker may still be converting the preceding valid upload.
+      { timeout: 80_000 },
     )
     .toBe("FAILED");
   await completed(request, receipt.assetId);

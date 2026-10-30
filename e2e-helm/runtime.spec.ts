@@ -203,6 +203,8 @@ for (const env of ["dev", "prod"] as const)
                 })
               ).json()
             ).status,
+          // The serial worker may still be converting the preceding valid upload.
+          { timeout: 80_000 },
         )
         .toBe("FAILED");
       await completed(request, receipt.assetId);

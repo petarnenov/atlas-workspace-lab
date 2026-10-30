@@ -28,11 +28,11 @@ jobs:
       - run: make helm-build ENV=dev
       - run: make helm-lint ENV=dev
       - run: make helm-up ENV=dev
-      - name: Release dev parser CPU reservations while preparing prod
+      - name: Release dev application CPU reservations while preparing prod
         run: |
           node --input-type=module <<'JS'
-          import {upgrade,values} from './scripts/helm/runtime.mjs';
-          upgrade('dev','docling-parser',{...values('dev','docling-parser'),stopped:true});
+          import {upgrade,values,applications} from './scripts/helm/runtime.mjs';
+          for(const service of applications) upgrade('dev',service,{...values('dev',service),stopped:true});
           JS
       - run: make helm-setup ENV=prod
       - run: make helm-build ENV=prod
@@ -41,9 +41,9 @@ jobs:
       - name: Start dev parser for sequential profile verification on a four CPU runner
         run: |
           node --input-type=module <<'JS'
-          import {upgrade,values,applications} from './scripts/helm/runtime.mjs';
+          import {upgrade,values,applications,up} from './scripts/helm/runtime.mjs';
           for(const service of applications) upgrade('prod',service,{...values('prod',service),stopped:true});
-          upgrade('dev','docling-parser');
+          up('dev');
           JS
       - run: pnpm exec playwright install --with-deps chromium
       - run: make helm-test
