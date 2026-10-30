@@ -8,6 +8,11 @@
 - Out-of-scope:
 - Contracts changed:
 
+## Architecture compliance
+- Applicable principles (P01–P21):
+- Architecture exception or approval (if any):
+- Compliance matrix updated:
+
 ## Verification
 - [ ] Tests and coverage evidence
 - [ ] API/event contract checks
