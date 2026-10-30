@@ -1,16 +1,13 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-
-export function getWorkspaceTitle(): string {
-  return "Atlas Workspace Lab";
-}
+import { getWorkspaceTitle } from "./title";
 
 function App() {
   return (
     <main style={{ fontFamily: "system-ui, sans-serif", maxWidth: 800, margin: "4rem auto", padding: "1rem" }}>
       <h1>{getWorkspaceTitle()}</h1>
       <p>Independent polyglot monorepo proof of concept.</p>
-      <p>React / TypeScript + Java / Spring Boot. Feature LAB-101 is awaiting approved specifications.</p>
+      <p>React/TypeScript + Java/Spring Boot. Feature LAB-101 awaits approved specifications.</p>
     </main>
   );
 }
