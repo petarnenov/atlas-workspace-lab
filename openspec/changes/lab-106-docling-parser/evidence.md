@@ -31,7 +31,7 @@ denial, output bounds, timeouts, retry exhaustion, lease loss and atomic rollbac
 The native/Helm and complete CI suites are tracked on PR #9. The Kubernetes
 failure-outcome tests use an explicit 80-second bound because a valid conversion
 may precede a rejected upload on the serial worker. Helm CI uses a separate kind
-worker node and sequential profile pools; this preserves exact application
+worker node with both profile pools running; this preserves exact application
 requests/replicas on a four-CPU host without claiming a capacity benchmark.
 Do not mark the final review task complete until required CI
 and human review pass. This is synthetic demo evidence, not a production SLO.

@@ -14,13 +14,6 @@ test.describe.configure({ mode: "serial" });
 for (const env of ["dev", "prod"] as const)
   test.describe(`${env} Helm demo`, () => {
     test.use({ baseURL: `http://127.0.0.1:${env === "dev" ? 5173 : 5174}` });
-    test.afterAll(() => {
-      if (env === "dev" && process.env.ATLAS_SEQUENTIAL_PARSER_TESTS === "1") {
-        for(const service of helmRuntime.applications)
-          helmRuntime.upgrade("dev",service,{...helmRuntime.values("dev",service),stopped:true});
-        helmRuntime.up("prod");
-      }
-    });
     const kubectl = (args: string[], options?: any) =>
       helmRuntime.kube(env, args, options);
     const token = (tenant = "a") =>
