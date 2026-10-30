@@ -267,7 +267,10 @@ for (const env of ["dev", "prod"] as const)
       const job = {
         apiVersion: "batch/v1",
         kind: "Job",
-        metadata: { name: "network-denial", namespace: "atlas-lab" },
+        metadata: {
+          name: "network-denial",
+          namespace: helmRuntime.namespace(env),
+        },
         spec: {
           backoffLimit: 0,
           activeDeadlineSeconds: 60,
@@ -511,7 +514,10 @@ for (const env of ["dev", "prod"] as const)
       const job = {
         apiVersion: "batch/v1",
         kind: "Job",
-        metadata: { name: "object-scope-proof", namespace: "atlas-lab" },
+        metadata: {
+          name: "object-scope-proof",
+          namespace: helmRuntime.namespace(env),
+        },
         spec: {
           backoffLimit: 0,
           activeDeadlineSeconds: 60,
