@@ -35,23 +35,20 @@ Requires JDK 21, Node.js 24, pnpm 10 (Corepack), Docker with Compose, and ports
 5173, 8080, 8081, 5432, 9092 and 9000 available. Run from the repository root.
 
 ```sh
-corepack enable
-pnpm install --frozen-lockfile
-pnpm local:prepare
-pnpm local:up
-pnpm test:integration
-node scripts/local/apps.mjs
+make doctor
+make setup
+make dev
 ```
 
-In a second terminal:
-
-```sh
-pnpm --filter @atlas/portal-ui dev --host 127.0.0.1
-```
+Run `make token` (or `make token TENANT=b`) in another terminal.
+`make dev` builds Java artifacts and starts dependencies, Java apps and Vite.
+Ctrl+C stops application processes; `make stop` stops dependencies and preserves data.
+Setup preserves complete existing credentials and rejects partial credential state.
+Install host runtimes yourself; setup does not install Node, Java or Docker.
 
 Open http://127.0.0.1:5173. Generate a short-lived **synthetic demo token** using
-`node scripts/local/token.mjs` and paste it into the labelled token field.
-Use `node scripts/local/token.mjs b` for the second synthetic tenant. Upload a
+`make token` and paste it into the labelled token field.
+Use `make token TENANT=b` for the second synthetic tenant. Upload a
 synthetic PDF of at most 5 MiB. Never paste production tokens or upload real data.
 The UI keeps the token only in memory; token generation is an offline fixture,
 not a production authentication system.
@@ -64,17 +61,14 @@ same credentials with their existing volumes. Ctrl+C stops the applications;
 ## Verify
 
 ```sh
-pnpm check:all
-pnpm check:contracts
-./gradlew test --no-daemon
-pnpm test:integration
-pnpm --filter @atlas/portal-ui build
-pnpm test:frontend
-pnpm exec playwright install chromium
-pnpm test:e2e
-node scripts/local/measure-builds.mjs
-node scripts/local/install-trivy.mjs
-node scripts/security.mjs
+make check
+make test-tools
+make build
+make up
+make test
+make measure-builds
+make install-trivy
+make security
 ```
 
 Run integration and E2E suites sequentially in this disposable environment:
@@ -91,3 +85,27 @@ A scaffold check alone provides no application verification.
 See the [operations runbook](docs/implementation/LAB-101-RUNBOOK.md) for failure
 handling, limitations, dependency provenance and rollback. Builds are coordinated
 with Nx/pnpm and Gradle; no Python or AI/model runtime is deployed.
+
+## Make command reference
+
+Run `make` or `make help` for descriptions. All existing package scripts remain available.
+
+| Commands | Underlying operation |
+| --- | --- |
+| doctor, setup, prepare | Prerequisite validation, locked installation and safe local preparation |
+| dev, apps, ui | Full foreground demo, Java harness, Vite |
+| up, stop, status | Existing local dependency startup, Compose stop and ps |
+| token TENANT=a/b | Offline synthetic token fixture |
+| build, build-ui | Gradle assemble plus UI build, UI build only |
+| test, test-tools | Sequential complete suite, Node helper tests with coverage gates |
+| test-java, test-frontend, test-integration, test-e2e | Corresponding pnpm test scripts |
+| check | Scaffold, architecture and contract checks sequentially |
+| check-scaffold, check-architecture, check-contracts | Corresponding pnpm check scripts |
+| graph, affected-build, affected-test | Nx graph and affected targets through pnpm |
+| measure-builds | Existing build measurement script |
+| install-trivy, security | Checksum-verified scanner installation, repository/image scans |
+
+Integration and E2E require running dependencies; E2E requires built Java artifacts.
+Stop `make dev` before running tests. Security scans require `make install-trivy`
+and built dependency images (`make up`). Make serializes its targets even with `-j`;
+do not launch independent test commands concurrently.

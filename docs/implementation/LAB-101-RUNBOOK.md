@@ -21,7 +21,7 @@ Do not expose these services publicly or reuse credentials outside this demo.
   The worker also requires its `*-parser.jar` at the configured root-relative
   path, overridable with `LAB_PARSER_JAR`.
 
-`node scripts/local/apps.mjs` starts the three JVM artifacts and stops all of
+`make apps` starts the three JVM artifacts and stops all of
 them if one unexpectedly exits. Ignored `.local/logs/` holds service logs. The
 local test harness supports SIGUSR2 to kill/restart the worker for failure
 injection; this is not a remotely exposed application operation.
@@ -30,7 +30,7 @@ injection; this is not a remotely exposed application operation.
 
 Compose named volumes retain PostgreSQL data, Kafka logs at the explicit
 `/var/lib/kafka/data` path and RustFS objects/IAM at `/data`. Recreating containers
-preserves these volumes; `docker compose stop` preserves both containers and
+preserves these volumes; `make stop` preserves both containers and
 volumes. Never use `down --volumes` unless intentionally deleting all demo data.
 Do not regenerate `.env` against existing databases or object-store identities.
 
@@ -124,3 +124,11 @@ no promise that an older implementation understands a newer database schema.
 Removing all synthetic data is a separate, explicitly destructive operator
 choice. Never delete volumes or credentials as an automatic rollback step.
 Do not merge or archive OpenSpec changes until the owner reviews the PR and CI.
+
+## Make workflow
+
+Use `make doctor`, `make setup`, then `make dev` from the repository root.
+Use `make status` to inspect dependencies and `make stop` to stop them without
+deleting volumes. See README for all build, test and security commands.
+If setup reports partial credentials, restore the matching local .env and all
+four signing keys; never regenerate credentials against existing volumes.
