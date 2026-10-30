@@ -1,0 +1,7 @@
+apiVersion: v2
+name: atlas-platform
+description: Isolated synthetic Kubernetes demonstration
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.35.0 <1.36.0-0"

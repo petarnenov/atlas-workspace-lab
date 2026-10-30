@@ -1,0 +1,111 @@
+{{ include "atlas-component.guard" . }}
+{{ if eq .Values.component "portal-ui" }}
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "portal-ui",
+    "namespace": {{ .Release.Namespace | toJson }},
+    "labels": {
+      "app.kubernetes.io/managed-by": "Helm",
+      "app.kubernetes.io/part-of": "atlas-workspace-lab",
+      "atlas-lab/environment": {{ .Values.environment | toJson }}
+    },
+    "annotations": {
+      "meta.helm.sh/release-name": {{ .Release.Name | toJson }},
+      "meta.helm.sh/release-namespace": {{ .Release.Namespace | toJson }}
+    }
+  },
+  "spec": {
+    "replicas": {{ ternary 0 (int (index .Values.replicas "portal-ui")) .Values.stopped }},
+    "selector": {
+      "matchLabels": {
+        "app": "portal-ui"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "portal-ui",
+          "atlas-lab/environment": {{ .Values.environment | toJson }}
+        }
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "securityContext": {
+          "runAsNonRoot": true,
+          "runAsUser": 101,
+          "runAsGroup": 101,
+          "fsGroup": 101,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "terminationGracePeriodSeconds": 30,
+        "containers": [
+          {
+            "name": "portal-ui",
+            "image": {{ index .Values.images "portal-ui" | toJson }},
+            "imagePullPolicy": "Never",
+            "env": [],
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            },
+            "resources": {{ index .Values.resources "portal-ui" | toJson }},
+            "volumeMounts": [
+              {
+                "name": "tmp",
+                "mountPath": "/tmp"
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 8080
+              }
+            ],
+            "readinessProbe": {
+              "httpGet": {
+                "path": "/",
+                "port": 8080
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 3,
+              "failureThreshold": 6
+            },
+            "startupProbe": {
+              "tcpSocket": {
+                "port": 8080
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 2,
+              "failureThreshold": 60
+            },
+            "livenessProbe": {
+              "tcpSocket": {
+                "port": 8080
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 2,
+              "failureThreshold": 12
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "name": "tmp",
+            "emptyDir": {
+              "sizeLimit": "128Mi"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+{{ end }}

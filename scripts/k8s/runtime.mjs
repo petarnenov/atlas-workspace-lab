@@ -124,6 +124,7 @@ export function localCredentials(
     write: writeFileSync,
     mkdir: mkdirSync,
   },
+  directory = root,
 ) {
   const files = [
     "credentials.json",
@@ -132,7 +133,7 @@ export function localCredentials(
     "service-private.pem",
     "service-public.pem",
   ];
-  const present = files.map((name) => fs.exists(`${root}/${name}`));
+  const present = files.map((name) => fs.exists(`${directory}/${name}`));
   if (present.some(Boolean) && !present.every(Boolean))
     throw Error(
       "Partial Kubernetes credentials; restore matching local files. Never regenerate against existing PVCs.",
@@ -140,7 +141,7 @@ export function localCredentials(
   if (present.every(Boolean)) {
     try {
       const credentials = JSON.parse(
-        fs.read(`${root}/credentials.json`, "utf8"),
+        fs.read(`${directory}/credentials.json`, "utf8"),
       );
       if (
         ![
@@ -155,10 +156,10 @@ export function localCredentials(
         throw Error("Invalid credential shape");
       for (const name of ["fixture", "service"]) {
         const publicFromPrivate = createPublicKey(
-          fs.read(`${root}/${name}-private.pem`, "utf8"),
+          fs.read(`${directory}/${name}-private.pem`, "utf8"),
         ).export({ type: "spki", format: "pem" });
         const publicKey = createPublicKey(
-          fs.read(`${root}/${name}-public.pem`, "utf8"),
+          fs.read(`${directory}/${name}-public.pem`, "utf8"),
         ).export({ type: "spki", format: "pem" });
         if (publicFromPrivate !== publicKey)
           throw Error("Mismatched signing keys");
@@ -170,7 +171,7 @@ export function localCredentials(
       );
     }
   }
-  fs.mkdir(root, { recursive: true, mode: 0o700 });
+  fs.mkdir(directory, { recursive: true, mode: 0o700 });
   const credentials = Object.fromEntries(
     [
       "POSTGRES_ADMIN",
@@ -181,7 +182,7 @@ export function localCredentials(
       "WORKER_OBJECT",
     ].map((name) => [name, randomBytes(24).toString("hex")]),
   );
-  fs.write(`${root}/credentials.json`, JSON.stringify(credentials), {
+  fs.write(`${directory}/credentials.json`, JSON.stringify(credentials), {
     mode: 0o600,
   });
   for (const name of ["fixture", "service"]) {
@@ -190,8 +191,12 @@ export function localCredentials(
       publicKeyEncoding: { type: "spki", format: "pem" },
       privateKeyEncoding: { type: "pkcs8", format: "pem" },
     });
-    fs.write(`${root}/${name}-private.pem`, keys.privateKey, { mode: 0o600 });
-    fs.write(`${root}/${name}-public.pem`, keys.publicKey, { mode: 0o600 });
+    fs.write(`${directory}/${name}-private.pem`, keys.privateKey, {
+      mode: 0o600,
+    });
+    fs.write(`${directory}/${name}-public.pem`, keys.publicKey, {
+      mode: 0o600,
+    });
   }
   return credentials;
 }
@@ -277,8 +282,13 @@ export function validateLocalConfig(config) {
   )
     throw Error("Unexpected local kubeconfig; refusing cluster recreation.");
 }
-export function secretObjects(c, read = readFileSync) {
-  const key = (name) => read(`${root}/${name}`, "utf8");
+export function secretObjects(
+  c,
+  read = readFileSync,
+  directory = root,
+  scope = namespace,
+) {
+  const key = (name) => read(`${directory}/${name}`, "utf8");
   const entries = {
     "postgres-admin": {
       POSTGRES_PASSWORD: c.POSTGRES_ADMIN,
@@ -309,7 +319,7 @@ export function secretObjects(c, read = readFileSync) {
   return Object.entries(entries).map(([name, values]) => ({
     apiVersion: "v1",
     kind: "Secret",
-    metadata: { name, namespace },
+    metadata: { name, namespace: scope },
     immutable: true,
     type: "Opaque",
     data: Object.fromEntries(
@@ -343,16 +353,21 @@ export function reconcileSecrets(objects, kube = kubectl) {
         sensitive: true,
       });
 }
-export function setup() {
+export function setup({ clusterOnly = false } = {}) {
   doctor();
   const clusters = execute(kind, ["get", "clusters"], { quiet: true })
     .trim()
     .split("\n");
-  if (clusters.includes(namespace) && !existsSync(`${root}/credentials.json`))
+  if (
+    !clusterOnly &&
+    clusters.includes(namespace) &&
+    !existsSync(`${root}/credentials.json`)
+  )
     throw Error(
       "Existing cluster has no matching local credentials; restore them before setup.",
     );
-  localCredentials();
+  if (clusterOnly) mkdirSync(root, { recursive: true, mode: 0o700 });
+  else localCredentials();
   if (!clusters.includes(namespace))
     execute(kind, [
       "create",
@@ -387,6 +402,7 @@ export function setup() {
     undefined,
     "kube-system",
   );
+  if (clusterOnly) return;
   const found = kubectl(
     ["get", "namespace", namespace, "--ignore-not-found", "-o", "name"],
     { quiet: true },
@@ -577,13 +593,13 @@ export function up() {
   ])
     kubectl(["rollout", "status", `deployment/${name}`, "--timeout=300s"]);
 }
-export function token(tenant = "a") {
+export function token(tenant = "a", directory = root) {
   if (!["a", "b"].includes(tenant)) throw Error("TENANT must be a or b");
   const now = Math.floor(Date.now() / 1000);
   const encode = (value) =>
     Buffer.from(JSON.stringify(value)).toString("base64url");
   const value = `${encode({ alg: "RS256", typ: "JWT" })}.${encode({ iss: "lab-fixture", aud: "workspace-api", sub: "synthetic-user", tenantId: tenant === "a" ? "11111111-1111-4111-8111-111111111111" : "22222222-2222-4222-8222-222222222222", iat: now, nbf: now, exp: now + 300 })}`;
-  return `${value}.${sign("RSA-SHA256", Buffer.from(value), readFileSync(`${root}/fixture-private.pem`)).toString("base64url")}`;
+  return `${value}.${sign("RSA-SHA256", Buffer.from(value), readFileSync(`${directory}/fixture-private.pem`)).toString("base64url")}`;
 }
 export function stopForward(
   read = readFileSync,

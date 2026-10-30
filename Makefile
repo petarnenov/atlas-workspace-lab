@@ -98,3 +98,45 @@ k8s-test: ## Run Kubernetes tooling checks and real cluster E2E/failure tests
 	pnpm exec playwright test --config playwright.k8s.config.ts
 k8s-security: ## Scan Kubernetes manifests and all loaded workload images
 	node scripts/k8s/security.mjs
+
+ENV ?= dev
+export ENV SERVICE REVISION
+.PHONY: helm-tools helm-doctor helm-setup helm-build helm-lint helm-template helm-up helm-deploy helm-dev helm-prod helm-status helm-logs helm-forward helm-token helm-stop helm-rollback helm-test helm-security
+helm-tools: ## Explicitly install checksum-verified kind, kubectl and Helm
+	node scripts/k8s/install-kind.mjs
+	node scripts/helm/install.mjs
+helm-doctor: ## Check selected Helm demo environment (ENV=dev|prod)
+	node scripts/helm/runtime.mjs doctor
+helm-setup: ## Prepare isolated Helm namespace and credentials (ENV=dev|prod)
+	node scripts/helm/runtime.mjs setup
+helm-build: ## Build/load immutable images and record selected environment inventory
+	node scripts/helm/runtime.mjs build
+helm-lint: ## Validate both charts and selected environment values
+	node scripts/helm/runtime.mjs lint
+helm-template: ## Render selected environment charts without cluster mutation
+	node scripts/helm/runtime.mjs template
+helm-up: ## Start platform then independent application releases (ENV=dev|prod)
+	node scripts/helm/runtime.mjs up
+helm-deploy: ## Deploy exactly one app (ENV=dev|prod SERVICE=asset-service)
+	node scripts/helm/runtime.mjs deploy
+helm-dev: ## Prepare/build/start dev demo and forward UI on loopback 5173
+	node scripts/helm/runtime.mjs dev
+helm-prod: ## Prepare/build/start synthetic prod demo and forward UI on loopback 5174
+	node scripts/helm/runtime.mjs prod
+helm-status: ## Show selected Helm demo releases and Kubernetes resources
+	node scripts/helm/runtime.mjs status
+helm-logs: ## Show selected environment application logs
+	node scripts/helm/runtime.mjs logs
+helm-forward: ## Forward selected demo UI to loopback (dev 5173, prod 5174)
+	node scripts/helm/runtime.mjs forward
+helm-token: ## Generate selected environment synthetic token (TENANT=a|b)
+	@node scripts/helm/runtime.mjs token
+helm-stop: ## Stop selected environment, preserving releases, Secrets and PVCs
+	node scripts/helm/runtime.mjs stop
+helm-rollback: ## Roll back one compatible app release (SERVICE=... REVISION=...)
+	node scripts/helm/runtime.mjs rollback
+helm-test: ## Run Helm helper coverage, chart checks and real two-environment E2E
+	node --test --experimental-test-coverage --test-coverage-include='scripts/helm/*.mjs' --test-coverage-exclude='scripts/helm/*.test.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/helm/runtime.test.mjs
+	pnpm exec playwright test --config playwright.helm.config.ts
+helm-security: ## Scan charts, rendered profiles and their deployed images
+	node scripts/helm/security.mjs

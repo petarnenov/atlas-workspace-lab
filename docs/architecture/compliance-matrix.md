@@ -50,3 +50,18 @@ outbox and worker checkpoints. P17 uses single replicas and resource limits with
 scale claims. P15/P18/P19/P20 are enforced through exact spec approval, measured
 helper/probe coverage, real kind E2E and failure tests, CI and human PR review.
 Cluster/PVC deletion is explicitly destructive; stop/up preserves existing PVCs.
+
+## LAB-104 Helm demo environments
+
+Approved revision `0cfb4d6` preserves P02/P03 service ownership and versioned
+contracts while giving each application an independent Helm release. P05 keeps
+the same kind cluster and two small charts; no cloud, ingress, operators or AI
+infrastructure is added. P06–P10 use separate namespaces, scoped immutable
+Secrets outside Helm values/history, fixture signing keys, restricted pods and
+preserved default-deny policies, including cross-environment denial proofs.
+P15/P19 bind implementation to the exact owner-approved specification. P16–P18
+retain idempotent bootstrap, bounded failures, retained PVC recovery and measured
+runtime tests; two stateless replicas are explicitly not an HA claim. P20 pins
+Helm/checksums and immutable images and requires explicit compatible rollback.
+P01/P04/P11/P13/P14/P21 remain deferred AI guardrails; no model features are added.
+CI and human review remain mandatory before merge.

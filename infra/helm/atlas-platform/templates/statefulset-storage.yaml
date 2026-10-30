@@ -1,0 +1,171 @@
+{{ include "atlas-platform.guard" . }}
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "storage",
+    "namespace": {{ .Release.Namespace | toJson }},
+    "labels": {
+      "app.kubernetes.io/managed-by": "Helm",
+      "app.kubernetes.io/part-of": "atlas-workspace-lab",
+      "atlas-lab/environment": {{ .Values.environment | toJson }}
+    },
+    "annotations": {
+      "meta.helm.sh/release-name": {{ .Release.Name | toJson }},
+      "meta.helm.sh/release-namespace": {{ .Release.Namespace | toJson }}
+    }
+  },
+  "spec": {
+    "serviceName": "storage",
+    "replicas": {{ ternary 0 (int (index .Values.replicas "storage")) .Values.stopped }},
+    "selector": {
+      "matchLabels": {
+        "app": "storage"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "storage",
+          "atlas-lab/environment": {{ .Values.environment | toJson }}
+        }
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "securityContext": {
+          "runAsNonRoot": true,
+          "runAsUser": 10001,
+          "runAsGroup": 10001,
+          "fsGroup": 10001,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "initContainers": [],
+        "containers": [
+          {
+            "name": "storage",
+            "image": {{ index .Values.images "storage" | toJson }},
+            "imagePullPolicy": "Never",
+            "ports": [
+              {
+                "containerPort": 9000
+              }
+            ],
+            "env": [
+              {
+                "name": "RUSTFS_ACCESS_KEY",
+                "value": "local_admin"
+              },
+              {
+                "name": "RUSTFS_CONSOLE_ENABLE",
+                "value": "false"
+              },
+              {
+                "name": "RUSTFS_ADDRESS",
+                "value": ":9000"
+              },
+              {
+                "name": "RUSTFS_VOLUMES",
+                "value": "/data"
+              }
+            ],
+            "envFrom": [
+              {
+                "secretRef": {
+                  "name": {{ index .Values.secretRefs "storage-admin" | toJson }}
+                }
+              }
+            ],
+            "resources": {{ index .Values.resources "storage" | toJson }},
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "tmp",
+                "mountPath": "/tmp"
+              },
+              {
+                "name": "data",
+                "mountPath": "/data"
+              },
+              {
+                "name": "logs",
+                "mountPath": "/logs"
+              }
+            ],
+            "readinessProbe": {
+              "httpGet": {
+                "path": "/health/ready",
+                "port": 9000
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 3,
+              "failureThreshold": 6
+            },
+            "startupProbe": {
+              "httpGet": {
+                "path": "/health/ready",
+                "port": 9000
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 3,
+              "failureThreshold": 90
+            },
+            "livenessProbe": {
+              "httpGet": {
+                "path": "/health/ready",
+                "port": 9000
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 3,
+              "failureThreshold": 12
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "name": "tmp",
+            "emptyDir": {
+              "sizeLimit": "128Mi"
+            }
+          },
+          {
+            "name": "logs",
+            "emptyDir": {
+              "sizeLimit": "128Mi"
+            }
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": {{ .Values.storageSize | toJson }}
+            }
+          }
+        }
+      }
+    ],
+    "persistentVolumeClaimRetentionPolicy": {
+      "whenDeleted": "Retain",
+      "whenScaled": "Retain"
+    }
+  }
+}

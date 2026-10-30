@@ -1,0 +1,25 @@
+{{ include "atlas-platform.guard" . }}
+{
+  "apiVersion": "networking.k8s.io/v1",
+  "kind": "NetworkPolicy",
+  "metadata": {
+    "name": "default-deny",
+    "namespace": {{ .Release.Namespace | toJson }},
+    "labels": {
+      "app.kubernetes.io/managed-by": "Helm",
+      "app.kubernetes.io/part-of": "atlas-workspace-lab",
+      "atlas-lab/environment": {{ .Values.environment | toJson }}
+    },
+    "annotations": {
+      "meta.helm.sh/release-name": {{ .Release.Name | toJson }},
+      "meta.helm.sh/release-namespace": {{ .Release.Namespace | toJson }}
+    }
+  },
+  "spec": {
+    "podSelector": {},
+    "policyTypes": [
+      "Ingress",
+      "Egress"
+    ]
+  }
+}

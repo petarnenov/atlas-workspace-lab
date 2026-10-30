@@ -1,0 +1,67 @@
+name: Helm demo environments
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  helm-environments:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: make helm-tools
+      - run: make helm-setup ENV=dev
+      - run: make helm-build ENV=dev
+      - run: make helm-lint ENV=dev
+      - run: make helm-up ENV=dev
+      - run: make helm-setup ENV=prod
+      - run: make helm-build ENV=prod
+      - run: make helm-lint ENV=prod
+      - run: make helm-up ENV=prod
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: make helm-test
+      - run: make install-trivy
+      - run: make helm-security
+      - name: Show selected demo status after failure
+        if: failure()
+        run: |
+          node --input-type=module <<'JS'
+          import {existsSync} from 'node:fs';
+          import {kube} from './scripts/helm/runtime.mjs';
+          if(existsSync('.local/k8s/kubeconfig')) for(const env of ['dev','prod']) {
+            kube(env,['get','pods','-o','wide']);
+            kube(env,['get','events','--field-selector=type=Warning','-o','custom-columns=REASON:.reason,MESSAGE:.message']);
+            kube(env,['logs','-l','app=portal-ui','--prefix','--tail=30']);
+          }
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: helm-verification
+          path: |
+            .local/helm/dev/images.json
+            .local/helm/prod/images.json
+            .local/helm/security/*.json
+      - name: Stop demo releases while retaining data
+        if: always()
+        run: |
+          node --input-type=module <<'JS'
+          import {existsSync} from 'node:fs';
+          import {kube,namespace,stop} from './scripts/helm/runtime.mjs';
+          import {withOperation} from './scripts/k8s/runtime.mjs';
+          if(existsSync('.local/k8s/kubeconfig')) await withOperation(async()=>{
+            for(const env of ['dev','prod']) if(kube(env,['get','namespace',namespace(env),'--ignore-not-found','-o','name'],{quiet:true}).trim()) stop(env);
+          });
+          JS

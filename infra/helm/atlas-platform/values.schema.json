@@ -1,0 +1,437 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "environment",
+    "syntheticDemo",
+    "component",
+    "stopped",
+    "images",
+    "secretRefs",
+    "replicas",
+    "resources",
+    "storageSize"
+  ],
+  "properties": {
+    "environment": {
+      "enum": ["dev", "prod"]
+    },
+    "syntheticDemo": {
+      "const": true
+    },
+    "component": {
+      "enum": ["platform"]
+    },
+    "stopped": {
+      "type": "boolean"
+    },
+    "images": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "portal-ui",
+        "workspace-api",
+        "asset-service",
+        "processing-worker",
+        "postgres",
+        "kafka",
+        "storage",
+        "storage-init"
+      ],
+      "properties": {
+        "portal-ui": {
+          "type": "string",
+          "pattern": "^atlas/portal-ui:[a-f0-9]{64}$"
+        },
+        "workspace-api": {
+          "type": "string",
+          "pattern": "^atlas/workspace-api:[a-f0-9]{64}$"
+        },
+        "asset-service": {
+          "type": "string",
+          "pattern": "^atlas/asset-service:[a-f0-9]{64}$"
+        },
+        "processing-worker": {
+          "type": "string",
+          "pattern": "^atlas/processing-worker:[a-f0-9]{64}$"
+        },
+        "postgres": {
+          "type": "string",
+          "pattern": "^atlas/postgres:[a-f0-9]{64}$"
+        },
+        "kafka": {
+          "type": "string",
+          "pattern": "^atlas/kafka:[a-f0-9]{64}$"
+        },
+        "storage": {
+          "type": "string",
+          "pattern": "^atlas/storage:[a-f0-9]{64}$"
+        },
+        "storage-init": {
+          "type": "string",
+          "pattern": "^atlas/storage-init:[a-f0-9]{64}$"
+        }
+      }
+    },
+    "secretRefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "postgres-admin",
+        "storage-admin",
+        "storage-bootstrap",
+        "api-identity",
+        "asset-runtime",
+        "worker-runtime"
+      ],
+      "properties": {
+        "postgres-admin": {
+          "const": "postgres-admin"
+        },
+        "storage-admin": {
+          "const": "storage-admin"
+        },
+        "storage-bootstrap": {
+          "const": "storage-bootstrap"
+        },
+        "api-identity": {
+          "const": "api-identity"
+        },
+        "asset-runtime": {
+          "const": "asset-runtime"
+        },
+        "worker-runtime": {
+          "const": "worker-runtime"
+        }
+      }
+    },
+    "replicas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "portal-ui",
+        "workspace-api",
+        "asset-service",
+        "processing-worker",
+        "postgres",
+        "kafka",
+        "storage"
+      ],
+      "properties": {
+        "portal-ui": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2
+        },
+        "workspace-api": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2
+        },
+        "asset-service": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "processing-worker": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "postgres": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "kafka": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "storage": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "portal-ui",
+        "workspace-api",
+        "asset-service",
+        "processing-worker",
+        "postgres",
+        "kafka",
+        "storage"
+      ],
+      "properties": {
+        "portal-ui": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requests", "limits"],
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cpu", "memory"],
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*m$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*Mi$"
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cpu", "memory"],
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*m$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*Mi$"
+                }
+              }
+            }
+          }
+        },
+        "workspace-api": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requests", "limits"],
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cpu", "memory"],
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*m$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*Mi$"
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cpu", "memory"],
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*m$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*Mi$"
+                }
+              }
+            }
+          }
+        },
+        "asset-service": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requests", "limits"],
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cpu", "memory"],
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*m$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*Mi$"
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cpu", "memory"],
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*m$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*Mi$"
+                }
+              }
+            }
+          }
+        },
+        "processing-worker": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requests", "limits"],
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cpu", "memory"],
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*m$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*Mi$"
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cpu", "memory"],
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*m$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*Mi$"
+                }
+              }
+            }
+          }
+        },
+        "postgres": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requests", "limits"],
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cpu", "memory"],
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*m$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*Mi$"
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cpu", "memory"],
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*m$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*Mi$"
+                }
+              }
+            }
+          }
+        },
+        "kafka": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requests", "limits"],
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cpu", "memory"],
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*m$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*Mi$"
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cpu", "memory"],
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*m$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*Mi$"
+                }
+              }
+            }
+          }
+        },
+        "storage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requests", "limits"],
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cpu", "memory"],
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*m$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*Mi$"
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cpu", "memory"],
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*m$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*Mi$"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "storageSize": {
+      "enum": ["2Gi", "4Gi"]
+    }
+  }
+}

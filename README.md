@@ -143,3 +143,26 @@ unrelated clusters. Do not delete or regenerate credentials against existing
 PVCs. Kubernetes Secrets are not an encryption-at-rest guarantee. This is a
 single-node synthetic-data demonstration, with no HA, backup or production claim.
 See [Kubernetes operations](docs/implementation/LAB-103-RUNBOOK.md).
+
+## Helm environments (dev and prod demo)
+
+Two Helm charts provide five independent releases in each of `atlas-dev` and
+`atlas-prod`. Prod is a **synthetic local demo**: two API/UI replicas, singleton
+asset/worker/dependencies, separate credentials and PVCs. Both environments need
+at least 4 Docker CPUs and 10 GiB RAM.
+
+```sh
+make helm-tools
+make helm-dev                    # dev, http://127.0.0.1:5173
+make helm-prod                   # prod demo, http://127.0.0.1:5174
+make helm-token ENV=prod          # selected environment fixture token
+make helm-deploy ENV=prod SERVICE=workspace-api
+make helm-stop ENV=prod           # retain releases, Secrets and PVCs
+```
+
+Ctrl+C ends forwarding; pods remain. Stop other UI forwarding on the same port.
+Use `helm-setup`, `helm-build`, `helm-up`, `helm-forward`, `helm-status`,
+`helm-logs`, `helm-lint`, `helm-template`, `helm-rollback`, `helm-test` and
+`helm-security` for individual operations. See the
+[Helm runbook](docs/implementation/LAB-104-RUNBOOK.md) for rollback, isolation,
+verification and demo limitations.

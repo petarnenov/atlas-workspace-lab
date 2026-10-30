@@ -1,0 +1,167 @@
+{{ include "atlas-component.guard" . }}
+{{ if eq .Values.component "asset-service" }}
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "asset-service",
+    "namespace": {{ .Release.Namespace | toJson }},
+    "labels": {
+      "app.kubernetes.io/managed-by": "Helm",
+      "app.kubernetes.io/part-of": "atlas-workspace-lab",
+      "atlas-lab/environment": {{ .Values.environment | toJson }}
+    },
+    "annotations": {
+      "meta.helm.sh/release-name": {{ .Release.Name | toJson }},
+      "meta.helm.sh/release-namespace": {{ .Release.Namespace | toJson }}
+    }
+  },
+  "spec": {
+    "replicas": {{ ternary 0 (int (index .Values.replicas "asset-service")) .Values.stopped }},
+    "selector": {
+      "matchLabels": {
+        "app": "asset-service"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "asset-service",
+          "atlas-lab/environment": {{ .Values.environment | toJson }}
+        }
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "securityContext": {
+          "runAsNonRoot": true,
+          "runAsUser": 10001,
+          "runAsGroup": 10001,
+          "fsGroup": 10001,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "terminationGracePeriodSeconds": 30,
+        "containers": [
+          {
+            "name": "asset-service",
+            "image": {{ index .Values.images "asset-service" | toJson }},
+            "imagePullPolicy": "Never",
+            "env": [
+              {
+                "name": "SERVER_ADDRESS",
+                "value": "0.0.0.0"
+              },
+              {
+                "name": "ASSET_DB_URL",
+                "value": "jdbc:postgresql://postgres:5432/assets"
+              },
+              {
+                "name": "KAFKA_BOOTSTRAP",
+                "value": "kafka-client:19092"
+              },
+              {
+                "name": "LAB_OBJECT_ENDPOINT",
+                "value": "http://storage:9000"
+              },
+              {
+                "name": "LAB_SERVICE_PUBLIC_KEY",
+                "value": "/keys/service-public.pem"
+              },
+              {
+                "name": "LAB_ASSET_DB_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": {{ index .Values.secretRefs "asset-runtime" | toJson }},
+                    "key": "LAB_ASSET_DB_PASSWORD"
+                  }
+                }
+              },
+              {
+                "name": "LAB_ASSET_OBJECT_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": {{ index .Values.secretRefs "asset-runtime" | toJson }},
+                    "key": "LAB_ASSET_OBJECT_PASSWORD"
+                  }
+                }
+              }
+            ],
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            },
+            "resources": {{ index .Values.resources "asset-service" | toJson }},
+            "volumeMounts": [
+              {
+                "name": "tmp",
+                "mountPath": "/tmp"
+              },
+              {
+                "name": "keys",
+                "mountPath": "/keys",
+                "readOnly": true
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 8081
+              }
+            ],
+            "readinessProbe": {
+              "tcpSocket": {
+                "port": 8081
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 2,
+              "failureThreshold": 6
+            },
+            "startupProbe": {
+              "tcpSocket": {
+                "port": 8081
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 2,
+              "failureThreshold": 60
+            },
+            "livenessProbe": {
+              "tcpSocket": {
+                "port": 8081
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 2,
+              "failureThreshold": 12
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "name": "tmp",
+            "emptyDir": {
+              "sizeLimit": "128Mi"
+            }
+          },
+          {
+            "name": "keys",
+            "secret": {
+              "secretName": "asset-runtime",
+              "defaultMode": 288,
+              "items": [
+                {
+                  "key": "service-public.pem",
+                  "path": "service-public.pem"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+{{ end }}

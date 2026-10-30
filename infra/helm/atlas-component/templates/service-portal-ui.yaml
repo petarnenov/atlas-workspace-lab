@@ -1,0 +1,32 @@
+{{ include "atlas-component.guard" . }}
+{{ if eq .Values.component "portal-ui" }}
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "name": "portal-ui",
+    "namespace": {{ .Release.Namespace | toJson }},
+    "labels": {
+      "app.kubernetes.io/managed-by": "Helm",
+      "app.kubernetes.io/part-of": "atlas-workspace-lab",
+      "atlas-lab/environment": {{ .Values.environment | toJson }}
+    },
+    "annotations": {
+      "meta.helm.sh/release-name": {{ .Release.Name | toJson }},
+      "meta.helm.sh/release-namespace": {{ .Release.Namespace | toJson }}
+    }
+  },
+  "spec": {
+    "selector": {
+      "app": "portal-ui"
+    },
+    "ports": [
+      {
+        "name": "main",
+        "port": 8080,
+        "targetPort": 8080
+      }
+    ]
+  }
+}
+{{ end }}
