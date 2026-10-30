@@ -5,4 +5,4 @@
 - [x] Pin official artifacts, verify checksum and run security scans.
 - [x] Replace Compose/client/bootstrap and document local operation.
 - [x] Test lifecycle, credential denials, restart, compensation and E2E.
-- [ ] Attach evidence to LAB-101 Draft PR; do not merge/archive.
+- [x] Attach evidence to LAB-101 Draft PR #4; do not merge/archive.

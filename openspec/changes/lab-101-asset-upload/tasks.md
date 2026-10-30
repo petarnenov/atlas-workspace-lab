@@ -11,5 +11,5 @@
 - [x] Implement status projection and API contract tests.
 - [x] Implement React upload/status UX with component and E2E tests.
 - [x] Run affected builds, lint/type checks, security checks and at least 75% measured source coverage.
-- [ ] Attach verification evidence, review comments and rollback notes to PR.
+- [x] Attach verification evidence and rollback notes to Draft PR #4; human review remains pending.
 - [ ] Archive change only after verification and required approval.

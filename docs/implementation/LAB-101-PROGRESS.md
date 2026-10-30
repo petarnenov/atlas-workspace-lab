@@ -1,7 +1,8 @@
 # LAB-101 progress — 2026-10-30
 
 Branch: `feat/lab-101-implementation`. Implementation and local verification
-complete; Draft PR / GitHub CI / human review are the remaining delivery gates.
+complete. [Draft PR #4](https://github.com/petarnenov/atlas-workspace-lab/pull/4)
+is updated with scope and evidence; GitHub CI and human review remain delivery gates.
 No merge or OpenSpec archive is authorized.
 
 Owner approvals and exact revisions: [LAB-101-APPROVAL.md](LAB-101-APPROVAL.md).

@@ -1,3 +1,7 @@
+> Superseded before use by the owner-authorized S3-compatible RustFS replacement
+> (`openspec/changes/lab-101-s3-storage/`). No archived MinIO source build ran.
+> Historical review proposal follows.
+
 # LAB-101 — proposed temporary MinIO lifecycle exception
 
 Status: PROPOSED; NOT APPROVED, do not execute the source build yet.

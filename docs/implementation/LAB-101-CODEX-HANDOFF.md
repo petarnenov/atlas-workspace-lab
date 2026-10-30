@@ -3,7 +3,9 @@
 **Issue:** https://github.com/petarnenov/atlas-workspace-lab/issues/2
 **Approved spec PR:** https://github.com/petarnenov/atlas-workspace-lab/pull/3
 **Implementation branch:** `feat/lab-101-implementation`
-**Status:** READY FOR CODEX EXECUTION; not implemented.
+**Status:** Local implementation verified; [Draft PR #4](https://github.com/petarnenov/atlas-workspace-lab/pull/4) awaits CI/human review.
+See [delivery evidence](LAB-101-EVIDENCE.md). The owner-authorized RustFS
+replacement supersedes MinIO in the original delivery steps below.
 **Languages:** TypeScript and Java only. No Python.
 
 ## Read first

@@ -118,5 +118,6 @@ raw logs and machine-local metadata remain ignored in `.local/`.
 
 ## Pending review gates
 
-Attach the Draft PR and GitHub Actions results after push. Owner review remains
-required. OpenSpec changes stay unarchived and the branch stays unmerged.
+[Draft PR #4](https://github.com/petarnenov/atlas-workspace-lab/pull/4) contains
+approval links, scope, verification and rollback. Current GitHub Actions results
+are visible on its Checks tab. Owner review remains required. OpenSpec changes stay unarchived and the branch stays unmerged.

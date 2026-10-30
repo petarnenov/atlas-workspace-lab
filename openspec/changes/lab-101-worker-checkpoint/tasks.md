@@ -8,4 +8,4 @@
 - [x] Implement fenced recovery, bounded subprocess parsing and publication scanner.
 - [x] Verify proposed scenarios with real PostgreSQL/Kafka/RustFS integration/E2E tests (authorized S3 replacement).
 - [x] Measure >=75% source coverage and run security/contract/E2E checks.
-- [ ] Include review approval and test evidence in the LAB-101 Draft PR; do not merge.
+- [x] Include specification approval and test evidence in Draft PR #4; human PR review remains pending.
