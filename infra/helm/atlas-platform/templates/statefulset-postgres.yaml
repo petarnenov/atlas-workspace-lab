@@ -1,0 +1,175 @@
+{{ include "atlas-platform.guard" . }}
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "name": "postgres",
+    "namespace": {{ .Release.Namespace | toJson }},
+    "labels": {
+      "app.kubernetes.io/managed-by": "Helm",
+      "app.kubernetes.io/part-of": "atlas-workspace-lab",
+      "atlas-lab/environment": {{ .Values.environment | toJson }}
+    },
+    "annotations": {
+      "meta.helm.sh/release-name": {{ .Release.Name | toJson }},
+      "meta.helm.sh/release-namespace": {{ .Release.Namespace | toJson }}
+    }
+  },
+  "spec": {
+    "serviceName": "postgres",
+    "replicas": {{ ternary 0 (int (index .Values.replicas "postgres")) .Values.stopped }},
+    "selector": {
+      "matchLabels": {
+        "app": "postgres"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "postgres",
+          "atlas-lab/environment": {{ .Values.environment | toJson }}
+        }
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "securityContext": {
+          "runAsNonRoot": true,
+          "runAsUser": 70,
+          "runAsGroup": 70,
+          "fsGroup": 70,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "initContainers": [],
+        "containers": [
+          {
+            "name": "postgres",
+            "image": {{ index .Values.images "postgres" | toJson }},
+            "imagePullPolicy": "Never",
+            "ports": [
+              {
+                "containerPort": 5432
+              }
+            ],
+            "env": [
+              {
+                "name": "POSTGRES_USER",
+                "value": "local_admin"
+              },
+              {
+                "name": "PGDATA",
+                "value": "/var/lib/postgresql/data/pgdata"
+              }
+            ],
+            "envFrom": [
+              {
+                "secretRef": {
+                  "name": {{ index .Values.secretRefs "postgres-admin" | toJson }}
+                }
+              }
+            ],
+            "resources": {{ index .Values.resources "postgres" | toJson }},
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "tmp",
+                "mountPath": "/tmp"
+              },
+              {
+                "name": "data",
+                "mountPath": "/var/lib/postgresql/data"
+              },
+              {
+                "name": "socket",
+                "mountPath": "/var/run/postgresql"
+              }
+            ],
+            "readinessProbe": {
+              "exec": {
+                "command": [
+                  "pg_isready",
+                  "-U",
+                  "local_admin",
+                  "-d",
+                  "postgres"
+                ]
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 3
+            },
+            "startupProbe": {
+              "exec": {
+                "command": [
+                  "pg_isready",
+                  "-U",
+                  "local_admin",
+                  "-d",
+                  "postgres"
+                ]
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 3,
+              "failureThreshold": 90
+            },
+            "livenessProbe": {
+              "exec": {
+                "command": [
+                  "pg_isready",
+                  "-U",
+                  "local_admin",
+                  "-d",
+                  "postgres"
+                ]
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 3,
+              "failureThreshold": 12
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "name": "tmp",
+            "emptyDir": {
+              "sizeLimit": "128Mi"
+            }
+          },
+          {
+            "name": "socket",
+            "emptyDir": {}
+          }
+        ]
+      }
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "name": "data"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "resources": {
+            "requests": {
+              "storage": {{ .Values.storageSize | toJson }}
+            }
+          }
+        }
+      }
+    ],
+    "persistentVolumeClaimRetentionPolicy": {
+      "whenDeleted": "Retain",
+      "whenScaled": "Retain"
+    }
+  }
+}

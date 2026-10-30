@@ -2,14 +2,14 @@
 
 - [x] Record synthetic LAB-104, user clarification that prod is a demo, principles,
       exact release/environment boundaries, design and acceptance scenarios.
-- [ ] Obtain explicit owner approval of this exact revision before implementation.
-- [ ] Pin supported Helm/checksums; add explicit Make tooling and guarded lifecycle.
-- [ ] Add platform/component charts, reviewed dev/prod values and validation schemas.
-- [ ] Implement isolated namespaces/credentials/PVCs/release ownership and shared
+- [x] Obtain explicit owner approval of this exact revision before implementation.
+- [x] Pin supported Helm/checksums; add explicit Make tooling and guarded lifecycle.
+- [x] Add platform/component charts, reviewed dev/prod values and validation schemas.
+- [x] Implement isolated namespaces/credentials/PVCs/release ownership and shared
       cluster mutation locking while preserving existing native/Compose behavior.
-- [ ] Implement bounded platform bootstrap/proofs and independent app deployment,
+- [x] Implement bounded platform bootstrap/proofs and independent app deployment,
       stop/up, owned forwards, status/logs and explicit compatible app rollback.
-- [ ] Add meaningful helper tests and >=75% measured coverage; validate both chart
+- [x] Add meaningful helper tests and >=75% measured coverage; validate both chart
       profiles, wrong-context/configuration/ownership/initialization failure paths.
 - [ ] Prove both environments and exact replica counts in kind E2E, including
       upload/auth/tenancy, cross-environment network denial, restart/duplicate/

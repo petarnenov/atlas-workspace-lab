@@ -1,0 +1,179 @@
+{{ include "atlas-component.guard" . }}
+{{ if eq .Values.component "processing-worker" }}
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "processing-worker",
+    "namespace": {{ .Release.Namespace | toJson }},
+    "labels": {
+      "app.kubernetes.io/managed-by": "Helm",
+      "app.kubernetes.io/part-of": "atlas-workspace-lab",
+      "atlas-lab/environment": {{ .Values.environment | toJson }}
+    },
+    "annotations": {
+      "meta.helm.sh/release-name": {{ .Release.Name | toJson }},
+      "meta.helm.sh/release-namespace": {{ .Release.Namespace | toJson }}
+    }
+  },
+  "spec": {
+    "replicas": {{ ternary 0 (int (index .Values.replicas "processing-worker")) .Values.stopped }},
+    "strategy": {
+      "type": "Recreate"
+    },
+    "selector": {
+      "matchLabels": {
+        "app": "processing-worker"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "processing-worker",
+          "atlas-lab/environment": {{ .Values.environment | toJson }}
+        }
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "securityContext": {
+          "runAsNonRoot": true,
+          "runAsUser": 10001,
+          "runAsGroup": 10001,
+          "fsGroup": 10001,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "terminationGracePeriodSeconds": 30,
+        "containers": [
+          {
+            "name": "processing-worker",
+            "image": {{ index .Values.images "processing-worker" | toJson }},
+            "imagePullPolicy": "Never",
+            "env": [
+              {
+                "name": "WORKER_DB_URL",
+                "value": "jdbc:postgresql://postgres:5432/worker_checkpoint"
+              },
+              {
+                "name": "KAFKA_BOOTSTRAP",
+                "value": "kafka-client:19092"
+              },
+              {
+                "name": "LAB_OBJECT_ENDPOINT",
+                "value": "http://storage:9000"
+              },
+              {
+                "name": "LAB_SERVICE_PUBLIC_KEY",
+                "value": "/keys/service-public.pem"
+              },
+              {
+                "name": "LAB_PARSER_JAR",
+                "value": "/app/parser.jar"
+              },
+              {
+                "name": "LAB_WORKER_DB_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": {{ index .Values.secretRefs "worker-runtime" | toJson }},
+                    "key": "LAB_WORKER_DB_PASSWORD"
+                  }
+                }
+              },
+              {
+                "name": "LAB_WORKER_OBJECT_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": {{ index .Values.secretRefs "worker-runtime" | toJson }},
+                    "key": "LAB_WORKER_OBJECT_PASSWORD"
+                  }
+                }
+              },
+              {
+                "name": "POD_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.name"
+                  }
+                }
+              },
+              {
+                "name": "SPRING_KAFKA_CONSUMER_CLIENT_ID",
+                "value": "$(POD_NAME)"
+              }
+            ],
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            },
+            "resources": {{ index .Values.resources "processing-worker" | toJson }},
+            "volumeMounts": [
+              {
+                "name": "tmp",
+                "mountPath": "/tmp"
+              },
+              {
+                "name": "keys",
+                "mountPath": "/keys",
+                "readOnly": true
+              }
+            ],
+            "readinessProbe": {
+              "exec": {
+                "command": [
+                  "java",
+                  "-Xmx48m",
+                  "-XX:MaxMetaspaceSize=64m",
+                  "-cp",
+                  "/app/probe:/app/extracted/lib/*",
+                  "WorkerReady"
+                ]
+              },
+              "periodSeconds": 15,
+              "timeoutSeconds": 10,
+              "failureThreshold": 4
+            },
+            "startupProbe": {
+              "exec": {
+                "command": [
+                  "/bin/sh",
+                  "-c",
+                  "test -r /app/parser.jar"
+                ]
+              },
+              "failureThreshold": 30,
+              "periodSeconds": 5
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "name": "tmp",
+            "emptyDir": {
+              "sizeLimit": "128Mi"
+            }
+          },
+          {
+            "name": "keys",
+            "secret": {
+              "secretName": "worker-runtime",
+              "defaultMode": 288,
+              "items": [
+                {
+                  "key": "service-public.pem",
+                  "path": "service-public.pem"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+{{ end }}

@@ -1,0 +1,100 @@
+{{ include "atlas-platform.guard" . }}
+{{ if not .Values.stopped }}
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "name": {{ printf "%s-network-proof-deny" .Release.Name | toJson }},
+    "namespace": {{ .Release.Namespace | toJson }},
+    "labels": {
+      "app.kubernetes.io/managed-by": "Helm",
+      "app.kubernetes.io/part-of": "atlas-workspace-lab",
+      "atlas-lab/environment": {{ .Values.environment | toJson }}
+    },
+    "annotations": {
+      "meta.helm.sh/release-name": {{ .Release.Name | toJson }},
+      "meta.helm.sh/release-namespace": {{ .Release.Namespace | toJson }},
+      "helm.sh/hook": "post-install,post-upgrade",
+      "helm.sh/hook-weight": "-20",
+      "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
+    }
+  },
+  "spec": {
+    "backoffLimit": 0,
+    "activeDeadlineSeconds": 60,
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "network-proof-deny",
+          "atlas-lab/environment": {{ .Values.environment | toJson }}
+        }
+      },
+      "spec": {
+        "restartPolicy": "Never",
+        "automountServiceAccountToken": false,
+        "securityContext": {
+          "runAsNonRoot": true,
+          "runAsUser": 10001,
+          "runAsGroup": 10001,
+          "fsGroup": 10001,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "containers": [
+          {
+            "name": "network-proof-deny",
+            "image": {{ index .Values.images "asset-service" | toJson }},
+            "imagePullPolicy": "Never",
+            "command": [
+              "java",
+              "-Xmx32m",
+              "-cp",
+              "/app/probe",
+              "NetworkCheck",
+              "deny",
+              "postgres:5432",
+              "kafka-client:19092",
+              "storage:9000"
+            ],
+            "envFrom": [],
+            "resources": {
+              "requests": {
+                "cpu": "100m",
+                "memory": "128Mi"
+              },
+              "limits": {
+                "cpu": "1000m",
+                "memory": "256Mi"
+              }
+            },
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "tmp",
+                "mountPath": "/tmp"
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "tmp",
+            "emptyDir": {
+              "sizeLimit": "128Mi"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+{{ end }}

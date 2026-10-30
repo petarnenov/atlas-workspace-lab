@@ -1,0 +1,149 @@
+{{ include "atlas-component.guard" . }}
+{{ if eq .Values.component "workspace-api" }}
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "workspace-api",
+    "namespace": {{ .Release.Namespace | toJson }},
+    "labels": {
+      "app.kubernetes.io/managed-by": "Helm",
+      "app.kubernetes.io/part-of": "atlas-workspace-lab",
+      "atlas-lab/environment": {{ .Values.environment | toJson }}
+    },
+    "annotations": {
+      "meta.helm.sh/release-name": {{ .Release.Name | toJson }},
+      "meta.helm.sh/release-namespace": {{ .Release.Namespace | toJson }}
+    }
+  },
+  "spec": {
+    "replicas": {{ ternary 0 (int (index .Values.replicas "workspace-api")) .Values.stopped }},
+    "selector": {
+      "matchLabels": {
+        "app": "workspace-api"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "workspace-api",
+          "atlas-lab/environment": {{ .Values.environment | toJson }}
+        }
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "securityContext": {
+          "runAsNonRoot": true,
+          "runAsUser": 10001,
+          "runAsGroup": 10001,
+          "fsGroup": 10001,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "terminationGracePeriodSeconds": 30,
+        "containers": [
+          {
+            "name": "workspace-api",
+            "image": {{ index .Values.images "workspace-api" | toJson }},
+            "imagePullPolicy": "Never",
+            "env": [
+              {
+                "name": "SERVER_ADDRESS",
+                "value": "0.0.0.0"
+              },
+              {
+                "name": "LAB_ASSET_URL",
+                "value": "http://asset-service:8081"
+              },
+              {
+                "name": "LAB_FIXTURE_PUBLIC_KEY",
+                "value": "/keys/fixture-public.pem"
+              },
+              {
+                "name": "LAB_SERVICE_PRIVATE_KEY",
+                "value": "/keys/service-private.pem"
+              }
+            ],
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            },
+            "resources": {{ index .Values.resources "workspace-api" | toJson }},
+            "volumeMounts": [
+              {
+                "name": "tmp",
+                "mountPath": "/tmp"
+              },
+              {
+                "name": "keys",
+                "mountPath": "/keys",
+                "readOnly": true
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 8080
+              }
+            ],
+            "readinessProbe": {
+              "tcpSocket": {
+                "port": 8080
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 2,
+              "failureThreshold": 6
+            },
+            "startupProbe": {
+              "tcpSocket": {
+                "port": 8080
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 2,
+              "failureThreshold": 60
+            },
+            "livenessProbe": {
+              "tcpSocket": {
+                "port": 8080
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 2,
+              "failureThreshold": 12
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "name": "tmp",
+            "emptyDir": {
+              "sizeLimit": "128Mi"
+            }
+          },
+          {
+            "name": "keys",
+            "secret": {
+              "secretName": "api-identity",
+              "defaultMode": 288,
+              "items": [
+                {
+                  "key": "fixture-public.pem",
+                  "path": "fixture-public.pem"
+                },
+                {
+                  "key": "service-private.pem",
+                  "path": "service-private.pem"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+{{ end }}

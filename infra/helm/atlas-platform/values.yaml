@@ -1,0 +1,97 @@
+{
+  "environment": "dev",
+  "syntheticDemo": true,
+  "component": "platform",
+  "stopped": false,
+  "images": {},
+  "secretRefs": {
+    "postgres-admin": "postgres-admin",
+    "storage-admin": "storage-admin",
+    "storage-bootstrap": "storage-bootstrap",
+    "api-identity": "api-identity",
+    "asset-runtime": "asset-runtime",
+    "worker-runtime": "worker-runtime"
+  },
+  "replicas": {
+    "portal-ui": 1,
+    "workspace-api": 1,
+    "asset-service": 1,
+    "processing-worker": 1,
+    "postgres": 1,
+    "kafka": 1,
+    "storage": 1
+  },
+  "resources": {
+    "portal-ui": {
+      "requests": {
+        "cpu": "100m",
+        "memory": "128Mi"
+      },
+      "limits": {
+        "cpu": "1000m",
+        "memory": "512Mi"
+      }
+    },
+    "workspace-api": {
+      "requests": {
+        "cpu": "100m",
+        "memory": "128Mi"
+      },
+      "limits": {
+        "cpu": "1000m",
+        "memory": "512Mi"
+      }
+    },
+    "asset-service": {
+      "requests": {
+        "cpu": "100m",
+        "memory": "128Mi"
+      },
+      "limits": {
+        "cpu": "1000m",
+        "memory": "512Mi"
+      }
+    },
+    "processing-worker": {
+      "requests": {
+        "cpu": "100m",
+        "memory": "128Mi"
+      },
+      "limits": {
+        "cpu": "1000m",
+        "memory": "640Mi"
+      }
+    },
+    "postgres": {
+      "requests": {
+        "cpu": "100m",
+        "memory": "128Mi"
+      },
+      "limits": {
+        "cpu": "1000m",
+        "memory": "512Mi"
+      }
+    },
+    "kafka": {
+      "requests": {
+        "cpu": "100m",
+        "memory": "128Mi"
+      },
+      "limits": {
+        "cpu": "1000m",
+        "memory": "1024Mi"
+      }
+    },
+    "storage": {
+      "requests": {
+        "cpu": "100m",
+        "memory": "128Mi"
+      },
+      "limits": {
+        "cpu": "1000m",
+        "memory": "512Mi"
+      }
+    }
+  },
+  "storageSize": "2Gi"
+}

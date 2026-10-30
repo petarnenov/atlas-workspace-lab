@@ -1,0 +1,94 @@
+{{ include "atlas-platform.guard" . }}
+{{ if not .Values.stopped }}
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "name": {{ printf "%s-kafka-init" .Release.Name | toJson }},
+    "namespace": {{ .Release.Namespace | toJson }},
+    "labels": {
+      "app.kubernetes.io/managed-by": "Helm",
+      "app.kubernetes.io/part-of": "atlas-workspace-lab",
+      "atlas-lab/environment": {{ .Values.environment | toJson }}
+    },
+    "annotations": {
+      "meta.helm.sh/release-name": {{ .Release.Name | toJson }},
+      "meta.helm.sh/release-namespace": {{ .Release.Namespace | toJson }},
+      "helm.sh/hook": "post-install,post-upgrade",
+      "helm.sh/hook-weight": "-10",
+      "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
+    }
+  },
+  "spec": {
+    "backoffLimit": 2,
+    "activeDeadlineSeconds": 180,
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "kafka-init",
+          "atlas-lab/environment": {{ .Values.environment | toJson }}
+        }
+      },
+      "spec": {
+        "restartPolicy": "Never",
+        "automountServiceAccountToken": false,
+        "securityContext": {
+          "runAsNonRoot": true,
+          "runAsUser": 10001,
+          "runAsGroup": 10001,
+          "fsGroup": 10001,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "containers": [
+          {
+            "name": "kafka-init",
+            "image": {{ index .Values.images "kafka" | toJson }},
+            "imagePullPolicy": "Never",
+            "command": [
+              "/bin/sh",
+              "-ec",
+              "for topic in asset.uploaded.v1 asset.processed.v1; do /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --create --if-not-exists --topic \"$topic\" --partitions 1 --replication-factor 1 --config retention.ms=604800000; done"
+            ],
+            "envFrom": [],
+            "resources": {
+              "requests": {
+                "cpu": "100m",
+                "memory": "128Mi"
+              },
+              "limits": {
+                "cpu": "1000m",
+                "memory": "256Mi"
+              }
+            },
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "tmp",
+                "mountPath": "/tmp"
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "tmp",
+            "emptyDir": {
+              "sizeLimit": "128Mi"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+{{ end }}

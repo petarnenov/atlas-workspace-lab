@@ -1,0 +1,110 @@
+{{ include "atlas-platform.guard" . }}
+{{ if not .Values.stopped }}
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "name": {{ printf "%s-storage-init" .Release.Name | toJson }},
+    "namespace": {{ .Release.Namespace | toJson }},
+    "labels": {
+      "app.kubernetes.io/managed-by": "Helm",
+      "app.kubernetes.io/part-of": "atlas-workspace-lab",
+      "atlas-lab/environment": {{ .Values.environment | toJson }}
+    },
+    "annotations": {
+      "meta.helm.sh/release-name": {{ .Release.Name | toJson }},
+      "meta.helm.sh/release-namespace": {{ .Release.Namespace | toJson }},
+      "helm.sh/hook": "post-install,post-upgrade",
+      "helm.sh/hook-weight": "-10",
+      "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
+    }
+  },
+  "spec": {
+    "backoffLimit": 2,
+    "activeDeadlineSeconds": 180,
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "storage-init",
+          "atlas-lab/environment": {{ .Values.environment | toJson }}
+        }
+      },
+      "spec": {
+        "restartPolicy": "Never",
+        "automountServiceAccountToken": false,
+        "securityContext": {
+          "runAsNonRoot": true,
+          "runAsUser": 10001,
+          "runAsGroup": 10001,
+          "fsGroup": 10001,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "containers": [
+          {
+            "name": "storage-init",
+            "image": {{ index .Values.images "storage-init" | toJson }},
+            "imagePullPolicy": "Never",
+            "command": [
+              "/bin/sh",
+              "/bootstrap.sh"
+            ],
+            "envFrom": [
+              {
+                "secretRef": {
+                  "name": {{ index .Values.secretRefs "storage-bootstrap" | toJson }}
+                }
+              }
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "100m",
+                "memory": "128Mi"
+              },
+              "limits": {
+                "cpu": "1000m",
+                "memory": "256Mi"
+              }
+            },
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "tmp",
+                "mountPath": "/tmp"
+              },
+              {
+                "name": "policies",
+                "mountPath": "/policies",
+                "readOnly": true
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "tmp",
+            "emptyDir": {
+              "sizeLimit": "128Mi"
+            }
+          },
+          {
+            "name": "policies",
+            "configMap": {
+              "name": "storage-policies"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+{{ end }}
