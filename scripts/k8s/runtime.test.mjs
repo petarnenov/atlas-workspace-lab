@@ -8,8 +8,10 @@ import {
   cpSync,
   rmSync,
   existsSync,
+  statSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
+import { dirname } from "node:path";
 import { once } from "node:events";
 
 test("Kubernetes tools enforce ownership, repeatability, staged startup and failure paths", async () => {
@@ -184,13 +186,35 @@ else if(name==='javac')console.log('javac 21.0.1');else if(name==='pnpm')console
         },
       ],
     };
+    const temporaryConfigs = [];
     r.guard(
-      (command, args) =>
-        args[0] === "get"
-          ? "kind-atlas-lab https://127.0.0.1:6443"
-          : JSON.stringify(canonical),
+      (command, args, options) => {
+        if (args[0] === "get") return "kind-atlas-lab https://127.0.0.1:6443";
+        const file = args[1];
+        temporaryConfigs.push(file);
+        assert.notEqual(file, "/dev/stdin");
+        assert.equal(statSync(file).mode & 0o777, 0o600);
+        assert.equal(statSync(dirname(file)).mode & 0o777, 0o700);
+        assert.ok(readFileSync(file, "utf8").includes("kind-atlas-lab"));
+        assert.equal(options.sensitive, true);
+        assert.equal(options.input, undefined);
+        return JSON.stringify(canonical);
+      },
       () => "kind-atlas-lab https://127.0.0.1:6443 ",
     );
+    for (const file of temporaryConfigs) assert.equal(existsSync(file), false);
+    let failedConfig;
+    assert.throws(() =>
+      r.guard(
+        (command, args) => {
+          if (args[0] === "get") return "kind-atlas-lab https://127.0.0.1:6443";
+          failedConfig = args[1];
+          throw Error("synthetic kubectl failure");
+        },
+        () => "kind-atlas-lab https://127.0.0.1:6443 ",
+      ),
+    );
+    assert.equal(existsSync(failedConfig), false);
     const objects = r.secretObjects(r.localCredentials());
     let writes = 0;
     r.reconcileSecrets(objects, (args) => {

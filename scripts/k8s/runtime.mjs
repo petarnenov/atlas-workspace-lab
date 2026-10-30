@@ -13,7 +13,10 @@ import {
   cpSync,
   chmodSync,
   unlinkSync,
+  mkdtempSync,
+  rmSync,
 } from "node:fs";
+import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { manifests } from "./manifests.mjs";
@@ -75,15 +78,23 @@ export function guard(run = execute, read = readFileSync) {
     return;
   }
   const canonical = (raw) => {
-    const config = JSON.parse(
-      run(
-        kubectlTool,
-        ["--kubeconfig", "/dev/stdin", "config", "view", "--raw", "-o", "json"],
-        { input: raw, quiet: true, sensitive: true },
-      ),
-    );
-    validateLocalConfig(config);
-    return JSON.stringify(config);
+    // Node child-process stdin is a socket on Linux; kubectl cannot reopen it.
+    const directory = mkdtempSync(resolve(tmpdir(), "atlas-kubeconfig-"));
+    try {
+      const file = resolve(directory, "config");
+      writeFileSync(file, raw, { mode: 0o600 });
+      const config = JSON.parse(
+        run(
+          kubectlTool,
+          ["--kubeconfig", file, "config", "view", "--raw", "-o", "json"],
+          { quiet: true, sensitive: true },
+        ),
+      );
+      validateLocalConfig(config);
+      return JSON.stringify(config);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   };
   validateContext(canonical(actual), canonical(expected));
 }

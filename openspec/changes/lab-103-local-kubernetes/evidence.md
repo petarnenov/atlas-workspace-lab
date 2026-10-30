@@ -36,6 +36,17 @@ ownership/permissions so a restrictive host umask cannot break non-root executio
 
 ## Final local verification
 
+### Linux CI kubeconfig correction
+
+The first Kubernetes CI run failed after kind reached Ready. Reproduced with
+Node 24 and kubectl 1.35 on Linux: reopening Node spawnSync stdin through
+`--kubeconfig /dev/stdin` fails with `no such device or address` because stdin
+is a socket. A private temporary directory (0700) and kubeconfig file (0600)
+replace stdin only for canonicalization, with unconditional cleanup in finally.
+The same Linux reproduction succeeds using the file. Regression tests check
+permissions, suppressed output, and cleanup on success and command failure.
+Cluster identity checks and approved security/contract boundaries remain unchanged.
+
 - make k8s-test passed: Java probe coverage gates, three Node helper suites with
   measured ≥75% lines/branches/functions gates, and all seven real Kubernetes
   E2E scenarios (4.1 minutes).
