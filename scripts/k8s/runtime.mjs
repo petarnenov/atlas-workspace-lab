@@ -465,21 +465,48 @@ export function build() {
   );
   record("storage-init", [storage]);
   execute("docker", ["pull", versions.storage]);
-  execute(
-    kind,
-    [
-      "load",
-      "docker-image",
-      "--name",
-      namespace,
-      ...Object.values(built),
-      versions.storage,
-    ],
-    { timeout: 900000 },
-  );
+  loadImages([...Object.values(built), versions.storage]);
   writeFileSync(`${root}/images.json`, JSON.stringify(built, null, 2) + "\n", {
     mode: 0o600,
   });
+}
+export function loadImages(images, run = execute) {
+  const architecture = run(
+    "docker",
+    ["info", "--format", "{{.Architecture}}"],
+    {
+      quiet: true,
+    },
+  ).trim();
+  const platform = {
+    x86_64: "linux/amd64",
+    amd64: "linux/amd64",
+    aarch64: "linux/arm64",
+    arm64: "linux/arm64",
+  }[architecture];
+  if (!platform) throw Error("Unsupported Docker node architecture");
+  const archive = `${root}/images.tar`;
+  try {
+    run(
+      "docker",
+      ["image", "save", "--platform", platform, "--output", archive, ...images],
+      { timeout: 900000 },
+    );
+    run(kind, ["load", "image-archive", archive, "--name", namespace], {
+      timeout: 900000,
+    });
+  } finally {
+    rmSync(archive, { force: true });
+  }
+}
+export function stopWorkloads(kube = kubectl) {
+  const names = kube(["get", "deployments,statefulsets", "-o", "name"], {
+    quiet: true,
+  })
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (names.length) kube(["scale", ...names, "--replicas=0"]);
 }
 export function rendered(images) {
   return manifests().map((item) =>
@@ -635,8 +662,7 @@ export async function main(action) {
   else if (action === "stop") {
     guard();
     stopForward();
-    kubectl(["scale", "deployments", "--all", "--replicas=0"]);
-    kubectl(["scale", "statefulsets", "--all", "--replicas=0"]);
+    stopWorkloads();
   } else throw Error("Unknown Kubernetes action");
 }
 export async function withOperation(work) {

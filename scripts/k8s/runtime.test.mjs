@@ -45,7 +45,8 @@ if(name==='kind'){
  else if(s.includes('get jobs'))console.log(JSON.stringify({items:mode==='complete'?[{metadata:{name:'kafka-init'},status:{succeeded:1}},{metadata:{name:'storage-init'},status:{succeeded:1}}]:mode==='retry'?[{metadata:{name:'kafka-init'},status:{failed:1}}]:[]}));
  else if(args.includes('-')){const data=fs.readFileSync(0,'utf8');if(mode==='init-failure'&&!args.includes('--dry-run=server')&&data.includes('Deployment'))fs.writeFileSync('.local/k8s/deployment-after-failure','bad');}
 } else if(name==='docker'){
- if(args[0]==='info')console.log(JSON.stringify({NCPU:mode==='small'?1:8,MemTotal:8*1024**3}));
+ if(s==='info --format {{.Architecture}}')console.log('x86_64');
+ else if(args[0]==='info')console.log(JSON.stringify({NCPU:mode==='small'?1:8,MemTotal:8*1024**3}));
  if(args[0]==='image')console.log('sha256:'+('a'.repeat(64)));
 } else if(name==='java')console.log(mode==='old-java'?'openjdk 17.0.1':'openjdk 21.0.1');
 else if(name==='javac')console.log('javac 21.0.1');else if(name==='pnpm')console.log('10.0.0');
@@ -159,6 +160,46 @@ else if(name==='javac')console.log('javac 21.0.1');else if(name==='pnpm')console
     assert.throws(() => r.execute("docker", [], { sensitive: true }));
     delete process.env.FAKE_MODE;
     r.build();
+    for (const architecture of ["x86_64", "aarch64"]) {
+      const calls = [];
+      r.loadImages(["synthetic/image:fixture"], (command, args) => {
+        calls.push(args);
+        if (args[0] === "info") return architecture;
+        if (args.includes("save"))
+          writeFileSync(".local/k8s/images.tar", "fixture");
+        return "";
+      });
+      assert.ok(
+        calls[1].includes(
+          architecture === "x86_64" ? "linux/amd64" : "linux/arm64",
+        ),
+      );
+      assert.equal(calls[2][1], "image-archive");
+      assert.equal(existsSync(".local/k8s/images.tar"), false);
+    }
+    assert.throws(() => r.loadImages([], () => "unsupported"));
+    assert.throws(() =>
+      r.loadImages([], (command, args) => {
+        if (args[0] === "info") return "amd64";
+        writeFileSync(".local/k8s/images.tar", "partial");
+        throw Error("export failed");
+      }),
+    );
+    assert.equal(existsSync(".local/k8s/images.tar"), false);
+    let scales = 0;
+    r.stopWorkloads(() => "");
+    r.stopWorkloads((args) => {
+      if (args[0] === "get")
+        return "deployment.apps/example\nstatefulset.apps/database\n";
+      assert.deepEqual(args, [
+        "scale",
+        "deployment.apps/example",
+        "statefulset.apps/database",
+        "--replicas=0",
+      ]);
+      scales++;
+    });
+    assert.equal(scales, 1);
     const images = JSON.parse(readFileSync(".local/k8s/images.json"));
     assert.throws(() => r.kubectl([], undefined, "unrelated"));
     assert.throws(() => r.apply([], () => assert.fail("empty stage")));

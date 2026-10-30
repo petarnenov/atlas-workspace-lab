@@ -58,3 +58,14 @@ Cluster identity checks and approved security/contract boundaries remain unchang
 - Startup positive/negative connectivity proof Jobs passed before app deployment.
 - CI and human code review remain required before merge. No merge or archive
   is authorized by spec approval alone.
+
+### Docker containerd image import correction
+
+The next CI run passed setup but failed importing images with `content digest
+... not found`. kind documents this Docker containerd image-store incompatibility:
+https://kind.sigs.k8s.io/docs/user/known-issues/#unable-to-kind-load-docker-images
+Build now exports only the Docker daemon's Linux architecture and loads that
+archive into the dedicated cluster, removing the archive even on failure.
+Stop queries existing workloads before scaling, so cleanup after a build failure
+also succeeds when no workloads have been created. No host Docker settings,
+cluster identity checks, contracts or security boundaries are changed.
