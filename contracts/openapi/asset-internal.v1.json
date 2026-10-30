@@ -1,0 +1,207 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Atlas Asset Service Internal API",
+    "version": "1.0.0",
+    "description": "Proposed server-to-server asset API. Authoritative tenant-aware asset management; implementation requires approved trusted identity handling. Local demo only."
+  },
+  "servers": [
+    {
+      "url": "http://asset-service:8081",
+      "description": "Docker internal-only network"
+    }
+  ],
+  "paths": {
+    "/internal/v1/assets": {
+      "post": {
+        "operationId": "createAssetInternal",
+        "summary": "Store validated synthetic PDF from trusted BFF",
+        "security": [
+          {
+            "serviceToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted and scheduled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid PDF or request"
+          },
+          "401": {
+            "description": "Missing/invalid service credential"
+          },
+          "403": {
+            "description": "Insufficient service or tenant claims"
+          },
+          "413": {
+            "description": "Exceeds 5 MiB"
+          },
+          "415": {
+            "description": "Not a validated PDF"
+          },
+          "503": {
+            "description": "Storage or database unavailable"
+          }
+        }
+      }
+    },
+    "/internal/v1/assets/{assetId}": {
+      "get": {
+        "operationId": "readAssetInternal",
+        "summary": "Read status for authorized tenant",
+        "security": [
+          {
+            "serviceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authoritative status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid caller identity"
+          },
+          "404": {
+            "description": "Asset unavailable, including unauthorized asset"
+          },
+          "503": {
+            "description": "Database unavailable"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "serviceToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "SignedDemoServiceJWT",
+        "description": "Locally signed, audience-bound, short-lived BFF-to-service token with verified tenant and subject claims. Never accept arbitrary client-supplied tenant headers as authority."
+      }
+    },
+    "schemas": {
+      "AssetReceipt": {
+        "type": "object",
+        "required": [
+          "assetId",
+          "status",
+          "correlationId"
+        ],
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING"
+            ]
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "AssetDetail": {
+        "type": "object",
+        "required": [
+          "assetId",
+          "status",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "PROCESSING",
+              "COMPLETED",
+              "FAILED"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
