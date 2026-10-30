@@ -376,7 +376,7 @@ for (const env of ["dev", "prod"] as const)
         Object.fromEntries(
           ["dev", "prod"].flatMap((e) =>
             JSON.parse(
-              helmRuntime.helm(e, ["list", "--all", "-o", "json"]),
+              helmRuntime.helm(e, ["list", "-o", "json"]),
             ).map((r: any) => [e + "/" + r.name, r.revision]),
           ),
         );

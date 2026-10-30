@@ -363,7 +363,7 @@ export function stop(env) {
   assertNamespace(env);
   assertCredentials(env);
   stopForward(env);
-  const installed = JSON.parse(helm(env, ["list", "--all", "-o", "json"]));
+  const installed = JSON.parse(helm(env, ["list", "-o", "json"]));
   for (const service of [...applications, "platform"]) {
     if (!installed.some((x) => x.name === release(service))) continue;
     const configuration = JSON.parse(
@@ -527,7 +527,7 @@ export async function main(
     console.log(native.token(process.env.TENANT ?? "a", directory(env)));
   else if (action === "status") {
     console.log(`${env} synthetic demo (${namespace(env)})`);
-    helm(env, ["list", "--all"], { quiet: false });
+    helm(env, ["list"], { quiet: false });
     kube(env, ["get", "pods,services,pvc,jobs"]);
   } else if (action === "logs")
     kube(env, [
