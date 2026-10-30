@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const openapi = JSON.parse(readFileSync('contracts/openapi/asset-api.v1.json', 'utf8'));
+const internal = JSON.parse(readFileSync('contracts/openapi/asset-internal.v1.json', 'utf8'));
 const asyncapi = JSON.parse(readFileSync('contracts/asyncapi/asset-events.v1.json', 'utf8'));
 
 assert.equal(openapi.openapi, '3.1.0');
@@ -14,6 +15,10 @@ assert.ok(openapi.paths['/api/v1/assets'].post.responses['413']);
 assert.ok(openapi.paths['/api/v1/assets'].post.responses['415']);
 assert.ok(openapi.paths['/api/v1/assets'].post.security?.length);
 
+assert.equal(internal.openapi, '3.1.0');
+assert.ok(internal.paths['/internal/v1/assets'].post.security?.length);
+assert.ok(internal.paths['/internal/v1/assets/{assetId}'].get.security?.length);
+assert.ok(internal.components.securitySchemes.serviceToken);
 assert.equal(asyncapi.asyncapi, '3.0.0');
 assert.equal(asyncapi.channels.assetUploaded.address, 'asset.uploaded.v1');
 assert.equal(asyncapi.channels.assetProcessed.address, 'asset.processed.v1');
