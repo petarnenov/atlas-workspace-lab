@@ -1,13 +1,10 @@
 name: Foundation and component checks
-
 on:
   pull_request:
   push:
     branches: [main]
-
 permissions:
   contents: read
-
 jobs:
   scaffold:
     runs-on: ubuntu-latest
@@ -19,7 +16,7 @@ jobs:
       - run: |
           node scripts/check-scaffold.mjs
           node scripts/check-architecture.mjs
-
+          node scripts/check-contracts.mjs
   frontend:
     runs-on: ubuntu-latest
     steps:
@@ -27,16 +24,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Enable pnpm
-        run: corepack enable
-      - name: Install frontend dependencies
-        run: pnpm install --no-frozen-lockfile
-      - name: Typecheck and build
-        run: pnpm --filter @atlas/portal-ui build
-      - name: Unit tests
-        run: pnpm --filter @atlas/portal-ui test
-
-  java:
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @atlas/portal-ui build
+      - run: pnpm test:frontend
+  java-unit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,7 +37,43 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew test --no-daemon
+  integration-e2e-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          gradle-version: '9.2.1'
-      - name: Build and test services
-        run: gradle build --no-daemon
+          node-version: '24'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: node scripts/local/prepare.mjs
+      - run: node scripts/local/up.mjs
+      - name: Independent JVM artifacts, integration tests and 75% coverage gates
+        run: pnpm test:integration
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Real browser and provider/consumer contract E2E
+        run: pnpm test:e2e
+      - name: Verify affected component boundaries
+        run: node scripts/local/measure-builds.mjs --check-only
+      - name: Security and secret scans
+        run: |
+          node scripts/local/install-trivy.mjs
+          node scripts/security.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: measured-java-coverage
+          path: |
+            services/**/build/reports/jacoco/test/jacocoTestReport.xml
+            workers/**/build/reports/jacoco/test/jacocoTestReport.xml
+            libraries/**/build/reports/jacoco/test/jacocoTestReport.xml
+      - name: Stop disposable dependencies
+        if: always()
+        run: docker compose stop
