@@ -3,6 +3,8 @@ package dev.atlaslab.worker;
 import dev.atlaslab.demo.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class WorkerEvents {
+  private static final Logger LOG = LoggerFactory.getLogger(WorkerEvents.class);
   final Checkpoints checkpoints;
   final ObjectsStore objects;
   final Sandbox sandbox;
@@ -28,6 +31,7 @@ public class WorkerEvents {
 
   @KafkaListener(topics = "asset.uploaded.v1")
   public void receive(String raw) {
+    LOG.info("input_received");
     checkpoints.accept(raw);
   }
 
@@ -37,16 +41,50 @@ public class WorkerEvents {
     if (lease == null) return;
     Wire.Event input = Wire.event(lease.get("input_payload").toString(), true);
     int attempts = ((Number) lease.get("attempts")).intValue();
+    LOG.info(
+        "processing_started eventId={} assetId={} correlationId={} attempt={}",
+        input.eventId(),
+        input.assetId(),
+        input.correlationId(),
+        attempts);
     if (attempts > 3) {
-      checkpoints.finish(lease, Wire.outcome(input, "RETRY_EXHAUSTED"));
+      finish(lease, input, "RETRY_EXHAUSTED");
       return;
     }
     try {
       String error = sandbox.inspect(objects.get(input.objectKey()));
-      checkpoints.finish(lease, Wire.outcome(input, error));
+      finish(lease, input, error);
     } catch (Exception transientFailure) {
-      if (attempts >= 3) checkpoints.finish(lease, Wire.outcome(input, "RETRY_EXHAUSTED"));
-      else checkpoints.retry(lease);
+      if (attempts >= 3) finish(lease, input, "RETRY_EXHAUSTED");
+      else {
+        checkpoints.retry(lease);
+        LOG.warn(
+            "retry_scheduled eventId={} assetId={} correlationId={} attempt={}"
+                + " reason=OBJECT_UNAVAILABLE",
+            input.eventId(),
+            input.assetId(),
+            input.correlationId(),
+            attempts);
+      }
+    }
+  }
+
+  private void finish(Map<String, Object> lease, Wire.Event input, String error) {
+    boolean saved = checkpoints.finish(lease, Wire.outcome(input, error));
+    if (saved) {
+      LOG.info(
+          "outcome_saved eventId={} assetId={} correlationId={} status={} errorCode={}",
+          input.eventId(),
+          input.assetId(),
+          input.correlationId(),
+          error == null ? "COMPLETED" : "FAILED",
+          error == null ? "NONE" : Wire.ERRORS.contains(error) ? error : "PROCESSING_ERROR");
+    } else {
+      LOG.warn(
+          "outcome_not_saved eventId={} assetId={} correlationId={} reason=STALE_FENCE",
+          input.eventId(),
+          input.assetId(),
+          input.correlationId());
     }
   }
 
@@ -73,12 +111,26 @@ public class WorkerEvents {
         checkpoints.db.update(
             "UPDATE checkpoint SET sent=true,last_error=NULL WHERE event_id=?::uuid",
             row.get("event_id").toString());
+        LOG.info(
+            "outcome_published eventId={} assetId={} correlationId={} attempt={}",
+            row.get("event_id"),
+            row.get("asset_id"),
+            row.get("correlation_id"),
+            row.get("publication_attempts"));
       } catch (Exception failure) {
         checkpoints.db.update(
             "UPDATE checkpoint SET"
                 + " last_error='BROKER_UNAVAILABLE',publish_after=now()+((power(2,publication_attempts-1))::text||'"
                 + " seconds')::interval WHERE event_id=?::uuid",
             row.get("event_id").toString());
+        int attempts = ((Number) row.get("publication_attempts")).intValue();
+        LOG.warn(
+            "{} eventId={} assetId={} correlationId={} attempt={} reason=BROKER_UNAVAILABLE",
+            attempts >= 3 ? "publication_exhausted" : "publication_retry_scheduled",
+            row.get("event_id"),
+            row.get("asset_id"),
+            row.get("correlation_id"),
+            attempts);
       }
     }
   }
