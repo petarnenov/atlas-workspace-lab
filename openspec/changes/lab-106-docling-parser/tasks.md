@@ -11,7 +11,7 @@
 - [x] Add independent image/release, three replicas, policies/probes/resources.
 - [x] Extend Make/setup/doctor/local/native/Helm flows and parsed-copy inspection.
 - [x] Add happy/failure/tenant/security/idempotency/lease/quality regression tests.
-- [ ] Measure >=75% coverage and run contracts, builds and security gates.
-- [ ] Verify real Kubernetes upload/read, three ready replicas and separate deploy.
-- [ ] Document usage, constraints, costs, rollback and evidence; submit PR.
+- [x] Measure >=75% coverage and run contracts, builds and security gates.
+- [x] Verify real Kubernetes upload/read, three ready replicas and separate deploy.
+- [x] Document usage, constraints, costs, rollback and evidence; submit PR.
 - [ ] Obtain passing CI and human review; do not auto-merge or archive.
