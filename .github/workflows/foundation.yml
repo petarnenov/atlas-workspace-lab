@@ -17,6 +17,7 @@ jobs:
           node scripts/check-scaffold.mjs
           node scripts/check-architecture.mjs
           node scripts/check-contracts.mjs
+      - run: make test-tools
   frontend:
     runs-on: ubuntu-latest
     steps:
