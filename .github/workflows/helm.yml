@@ -43,6 +43,7 @@ jobs:
           if(existsSync('.local/k8s/kubeconfig')) for(const env of ['dev','prod']) {
             kube(env,['get','pods','-o','wide']);
             kube(env,['get','events','--field-selector=type=Warning','-o','custom-columns=REASON:.reason,MESSAGE:.message']);
+            kube(env,['logs','-l','app=portal-ui','--prefix','--tail=30']);
           }
           JS
       - uses: actions/upload-artifact@v4

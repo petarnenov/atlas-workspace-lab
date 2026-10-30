@@ -422,13 +422,20 @@ for (const env of ["dev", "prod"] as const)
       expect(Number(after[env + "/atlas-workspace-api"])).toBeGreaterThan(
         Number(before[env + "/atlas-workspace-api"]),
       );
-      expect(
-        (
-          await request.get(`/api/v1/assets/${assetId}`, {
-            headers: { Authorization: `Bearer ${token()}` },
-          })
-        ).status(),
-      ).toBe(200);
+      // Pod readiness alone does not prove end-to-end routing recovery. Require
+      // actual end-to-end recovery within a bounded window, not zero downtime.
+      await expect
+        .poll(
+          async () =>
+            (
+              await request.get(`/api/v1/assets/${assetId}`, {
+                headers: { Authorization: `Bearer ${token()}` },
+                timeout: 10_000,
+              })
+            ).status(),
+          { timeout: 40_000 },
+        )
+        .toBe(200);
       helmRuntime.rollback(
         env,
         "workspace-api",
@@ -439,13 +446,20 @@ for (const env of ["dev", "prod"] as const)
         if (key !== env + "/atlas-workspace-api")
           expect(rolled[key]).toBe(value);
       expect(helmRuntime.images(env)["workspace-api"]).toBe(image);
-      expect(
-        (
-          await request.get(`/api/v1/assets/${assetId}`, {
-            headers: { Authorization: `Bearer ${token()}` },
-          })
-        ).status(),
-      ).toBe(200);
+      // Pod readiness alone does not prove end-to-end routing recovery. Require
+      // actual end-to-end recovery within a bounded window, not zero downtime.
+      await expect
+        .poll(
+          async () =>
+            (
+              await request.get(`/api/v1/assets/${assetId}`, {
+                headers: { Authorization: `Bearer ${token()}` },
+                timeout: 10_000,
+              })
+            ).status(),
+          { timeout: 40_000 },
+        )
+        .toBe(200);
     });
     test("stop/up retains PVCs and restores the complete runtime", async () => {
       test.setTimeout(360_000);

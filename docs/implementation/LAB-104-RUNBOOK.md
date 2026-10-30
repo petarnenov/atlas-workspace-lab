@@ -92,6 +92,9 @@ other app/platform releases and the other environment are untouched. Platform
 rollback, arbitrary charts, automatic rollback and credential rotation are not
 supported. Review compatibility before rolling back future contract changes.
 
+Application rollout can briefly interrupt requests while Service endpoints and
+network policies converge; tests require HTTP recovery within 40 seconds.
+
 ```sh
 make helm-stop ENV=dev
 make helm-up ENV=dev
