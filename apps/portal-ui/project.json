@@ -1,0 +1,17 @@
+{
+  "name": "portal-ui",
+  "root": "apps/portal-ui",
+  "sourceRoot": "apps/portal-ui/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "command": "pnpm --filter @atlas/portal-ui build"
+    },
+    "test": {
+      "command": "pnpm --filter @atlas/portal-ui test"
+    },
+    "typecheck": {
+      "command": "pnpm --filter @atlas/portal-ui typecheck"
+    }
+  }
+}
