@@ -1,25 +1,36 @@
-# Engineering instructions for Codex
+# Codex Engineering Contract — Atlas Workspace Lab
 
-This is a **public, independent demonstration repository**. Never introduce proprietary source, company names, internal URLs, tokens, or customer data.
+This is a **public independent demonstration repository**. Never introduce proprietary code, company or customer names, internal URLs, sensitive project documents, live tokens, secrets, or tenant data.
 
-## Architecture
-- Polyglot monorepo: TypeScript/React plus Java; **no Python**.
-- Respect service ownership. No direct imports from another service's internals and no shared database tables across service boundaries.
-- Design versioned OpenAPI/AsyncAPI contracts before changing implementations.
-- Build and release deployable services independently.
-- Favor minimal infrastructure and maintainable code.
+## Mandatory architecture principles
+Read **[docs/architecture/principles.md](docs/architecture/principles.md)** before designing, proposing or changing code. **All P01–P21 are binding design guardrails**, with applicability determined by the component and feature. The PoC deliberately does not deploy speculative AI, RAG, orchestration or multi-region infrastructure. Do not weaken a principle because a capability is deferred.
 
-## Spec-driven workflow
-1. Link work to a GitHub Issue (or a synthetic Jira-style story).
-2. Create an OpenSpec change with proposal, specification, design, and tasks.
-3. Require human review of scope, contracts, security, and acceptance criteria **before writing implementation code**.
-4. Implement only the approved scope. If requirements change, update the spec and request review again.
-5. Add unit, integration, contract, and relevant E2E tests; aim for at least 75% automated source coverage, plus E2E happy paths.
-6. Run affected checks and include evidence in a Pull Request. Do not merge or archive an unverified change.
-7. Never bypass quality gates, modify CI protections, or publish secrets.
+### Directly applicable rules
+- P01/P02: coordination stays separate from domain ownership; no imports into another service's private source and no direct writes to another service's data.
+- P03/P04: contract-first, versioned OpenAPI/AsyncAPI; standard AI SDKs only when AI protocols are introduced.
+- P05: smallest operationally credible design and no unused infrastructure.
+- P06–P10: default-deny, scoped access, no secrets, tenant-safe handling and secure/synthetic data.
+- P11–P15/P21: source-grounding, risk gates, independent AI evaluation and human controls **if** model functionality is added.
+- P16–P18: idempotency, explicit failure/retry semantics and verified (not assumed) reliability.
+- P19/P20: SDD, tests, 75% measured source coverage for implemented features, E2E happy paths, controlled version policy.
 
-## Coding guidelines
-- Prefer SOLID, Clean Code, strict TypeScript, explicit validation, least-privilege access, and bounded retries.
-- For the future Java services, use Gradle and an officially supported LTS JDK.
-- Keep README and examples in English.
-- The sample domain is generic asset processing, not the source enterprise platform.
+## Approved technology boundary
+- Frontend: TypeScript, React, Vite, Vitest. Other approved frontend libraries as needed.
+- Backend and workers: Java and Spring Boot, Gradle, supported LTS JDK.
+- No Python. Monorepo orchestration evaluated with Nx and pnpm.
+- This PoC is not a clone of any company system.
+
+## Required SDD flow
+1. Link the work to a GitHub Issue (or synthetic Jira-style story).
+2. Propose an OpenSpec change containing proposal, specs, design and tasks; record applicable P-principles and affected contracts.
+3. Require **explicit human approval of the exact specification revision before feature implementation**.
+4. Modify only reviewed scope. If a contract or security boundary changes, update specs and request another review.
+5. Implement tests for happy and failure paths; run affected checks, coverage and security checks.
+6. Submit PR with issue, spec, approval evidence, affected components and build/test evidence.
+7. Do **not** merge, archive a change or bypass CI protections without human review.
+
+## Escalation
+If a proposed feature conflicts with a principle, stop feature work, document an exception with rationale, safeguards, owner and rollback, and request approval.
+
+## Definition of Done
+Applicable approved OpenSpec scenarios implemented; versioned contracts validated; security failure cases tested; meaningful unit/integration/E2E tests; CI checks passed; reviewer approved. Never report a local/demo stub as production-ready.
