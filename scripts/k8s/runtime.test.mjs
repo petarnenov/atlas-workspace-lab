@@ -35,7 +35,7 @@ if(name==='trivy'&&args.includes('--output'))fs.writeFileSync(args[args.indexOf(
 if(name==='kind'){
  if(s==='version')console.log('kind v0.33.0');
  else if(s==='get clusters')console.log(mode==='fresh'?'':'atlas-lab');
- else if(args[0]==='create')fs.writeFileSync('.local/k8s/kubeconfig','kind-atlas-lab https://127.0.0.1:6443\\n');
+ else if(args[0]==='create'){fs.writeFileSync('.local/k8s/kubeconfig','kind-atlas-lab https://127.0.0.1:6443\\n');fs.writeFileSync('.local/k8s/created-config',args[args.indexOf('--config')+1]);}
  else if(s.startsWith('get kubeconfig'))console.log('kind-atlas-lab https://127.0.0.1:6443');
 } else if(name==='kubectl'){
  if(s==='version --client -o json')console.log(JSON.stringify({clientVersion:{major:'1',minor:mode==='skew'?'30':'35'}}));
@@ -90,6 +90,13 @@ else if(name==='javac')console.log('javac 21.0.1');else if(name==='pnpm')console
     );
     process.env.FAKE_MODE = "fresh";
     r.setup();
+    assert.equal(readFileSync('.local/k8s/created-config','utf8'),'infra/k8s/kind.json');
+    process.env.ATLAS_KIND_WORKER = "1";
+    try {
+      r.setup();
+      assert.equal(readFileSync('.local/k8s/created-config','utf8'),'infra/k8s/kind-ci.json');
+      assert.deepEqual(JSON.parse(readFileSync('infra/k8s/kind-ci.json')).nodes.map(node=>node.role),['control-plane','worker']);
+    } finally { delete process.env.ATLAS_KIND_WORKER; }
     // Fake kind's stdout includes its usual trailing newline.
     writeFileSync(
       ".local/k8s/kubeconfig",

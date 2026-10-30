@@ -18,6 +18,8 @@ Passing local checks do not replace required CI or human review.
 | Repository dependency/secret scan including locked AsyncAPI parser | Zero HIGH/CRITICAL findings |
 | Real Helm dev upload, saved Markdown/JSON/API/Make read, tenant denial, independent parser deploy | 3 tests passed |
 | Same real Helm prod demo scenarios | 3 tests passed |
+| Helm identity/tenant/idempotency and asynchronous failure scenarios | Passed in both profiles (2 tests) |
+| Full local Compose persistence/restart E2E suite | 7 tests passed |
 | Live Kubernetes replicas in both profiles | Parser 3/3 Ready; worker 1/1 Ready |
 
 The independent-deploy tests assert that only the parser Helm release changes.
@@ -26,8 +28,12 @@ expectations; it does not derive expected output from the converter itself.
 Failure tests cover invalid/encrypted/oversized inputs, authentication, tenant
 denial, output bounds, timeouts, retry exhaustion, lease loss and atomic rollback.
 
-The complete Compose persistence/restart suite and native/Helm CI suites are
-tracked on PR #9. Do not mark the final review task complete until required CI
+The native/Helm and complete CI suites are tracked on PR #9. The Kubernetes
+failure-outcome tests use an explicit 80-second bound because a valid conversion
+may precede a rejected upload on the serial worker. Helm CI uses a separate kind
+worker node and sequential profile pools; this preserves exact application
+requests/replicas on a four-CPU host without claiming a capacity benchmark.
+Do not mark the final review task complete until required CI
 and human review pass. This is synthetic demo evidence, not a production SLO.
 
 Usage, resource costs, constraints and rollback:

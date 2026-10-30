@@ -53,7 +53,12 @@ Each parser reserves 500m CPU/1024 MiB memory and is limited to 2 CPUs/2048 MiB,
 with 256 MiB scratch. Docker needs 14 GiB RAM for concurrent profiles; 8 CPUs are
 recommended. Four CPU CI runners exercise the profiles' parser pools and applications
 sequentially while keeping both environments' database/broker/storage
-network-boundary targets alive. Tests explicitly
+network-boundary targets alive. Helm CI uses `ATLAS_KIND_WORKER=1` to create an
+additional kind worker node (`infra/k8s/kind-ci.json`), accommodating scheduler
+reservations without changing application requests or limits. Both Docker nodes
+share the runner's physical CPUs; these are functional tests, not throughput or
+production capacity measurements. Existing local clusters are not recreated.
+Tests explicitly
 start all three parser replicas in each profile; they do not lower replica counts.
 
 Parser startup verifies the packaged model file hashes and initializes the

@@ -379,7 +379,7 @@ export function setup({ clusterOnly = false } = {}) {
       "--image",
       versions.node,
       "--config",
-      "infra/k8s/kind.json",
+      process.env.ATLAS_KIND_WORKER === "1" ? "infra/k8s/kind-ci.json" : "infra/k8s/kind.json",
       "--kubeconfig",
       `${root}/kubeconfig`,
       "--wait",

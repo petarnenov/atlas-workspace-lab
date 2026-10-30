@@ -11,6 +11,7 @@ jobs:
     timeout-minutes: 60
     env:
       ATLAS_SEQUENTIAL_PARSER_TESTS: "1"
+      ATLAS_KIND_WORKER: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
