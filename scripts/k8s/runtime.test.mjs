@@ -380,6 +380,17 @@ test("checked-in manifests match generated resources and least-privilege constra
     ),
   );
   assert.equal(items.filter((x) => x.kind === "StatefulSet").length, 3);
+  const brokerService = items.find(
+    (x) => x.kind === "Service" && x.metadata.name === "kafka-client",
+  );
+  assert.deepEqual(brokerService.spec.selector, { app: "kafka" });
+  assert.equal(brokerService.spec.clusterIP, undefined);
+  assert.equal(brokerService.spec.ports[0].port, 19092);
+  assert.equal(
+    items.find((x) => x.kind === "Service" && x.metadata.name === "kafka").spec
+      .clusterIP,
+    "None",
+  );
   for (const mode of ["allow", "deny"])
     assert.ok(
       items.some(

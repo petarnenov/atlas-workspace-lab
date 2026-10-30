@@ -187,7 +187,7 @@ test("default deny blocks unrelated pods while authorized connections work", asy
       "NetworkCheck",
       "allow",
       "postgres:5432",
-      "kafka:19092",
+      "kafka-client:19092",
       "storage:9000",
     ],
     { quiet: true },
@@ -223,7 +223,7 @@ test("default deny blocks unrelated pods while authorized connections work", asy
                 "NetworkCheck",
                 "deny",
                 "postgres:5432",
-                "kafka:19092",
+                "kafka-client:19092",
                 "storage:9000",
               ],
               securityContext: {
@@ -260,6 +260,14 @@ test("repeated reconciliation and stateful pod recreation preserve stored object
   test.setTimeout(360_000);
   setup();
   up();
+  const brokerAddress = () =>
+    kubectl(
+      ["get", "service", "kafka-client", "-o", "jsonpath={.spec.clusterIP}"],
+      { quiet: true },
+    ).trim();
+  const stableAddress = brokerAddress();
+  expect(stableAddress).not.toBe("None");
+  expect(stableAddress).not.toBe("");
   const before = db(
     `SELECT payload FROM upload_outbox WHERE asset_id='${assetId}'`,
   );
@@ -267,6 +275,7 @@ test("repeated reconciliation and stateful pod recreation preserve stored object
     kubectl(["delete", "pod", `${name}-0`]);
     kubectl(["rollout", "status", `statefulset/${name}`, "--timeout=180s"]);
   }
+  expect(brokerAddress()).toBe(stableAddress);
   await completed(request, assetId);
   expect(
     db(`SELECT payload FROM upload_outbox WHERE asset_id='${assetId}'`),

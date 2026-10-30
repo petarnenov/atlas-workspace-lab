@@ -288,7 +288,7 @@
                   },
                   {
                     "name": "KAFKA_ADVERTISED_LISTENERS",
-                    "value": "INTERNAL://kafka:19092"
+                    "value": "INTERNAL://kafka-client:19092"
                   },
                   {
                     "name": "KAFKA_LISTENER_SECURITY_PROTOCOL_MAP",
@@ -745,6 +745,27 @@
       }
     },
     {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "kafka-client",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "selector": {
+          "app": "kafka"
+        },
+        "publishNotReadyAddresses": true,
+        "ports": [
+          {
+            "name": "broker",
+            "port": 19092,
+            "targetPort": 19092
+          }
+        ]
+      }
+    },
+    {
       "apiVersion": "batch/v1",
       "kind": "Job",
       "metadata": {
@@ -785,7 +806,7 @@
                   "NetworkCheck",
                   "allow",
                   "postgres:5432",
-                  "kafka:19092",
+                  "kafka-client:19092",
                   "storage:9000"
                 ],
                 "envFrom": [],
@@ -869,7 +890,7 @@
                   "NetworkCheck",
                   "deny",
                   "postgres:5432",
-                  "kafka:19092",
+                  "kafka-client:19092",
                   "storage:9000"
                 ],
                 "envFrom": [],
@@ -1277,7 +1298,7 @@
                   },
                   {
                     "name": "KAFKA_BOOTSTRAP",
-                    "value": "kafka:19092"
+                    "value": "kafka-client:19092"
                   },
                   {
                     "name": "LAB_OBJECT_ENDPOINT",
@@ -1439,7 +1460,7 @@
                   },
                   {
                     "name": "KAFKA_BOOTSTRAP",
-                    "value": "kafka:19092"
+                    "value": "kafka-client:19092"
                   },
                   {
                     "name": "LAB_OBJECT_ENDPOINT",

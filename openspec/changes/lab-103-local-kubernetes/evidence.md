@@ -79,3 +79,17 @@ It is recorded alongside the other seven images and used for rollout and scannin
 The storage manifest uses Never pull policy, like other locally loaded images.
 CI emits pod status and warning events on failure, without dumping environment
 variables or Secret resources.
+
+### Kafka client address recovery
+
+CI reached real E2E and passed the first four scenarios, but a new upload after
+broker recreation remained PROCESSING beyond the existing 80-second deadline.
+The same scenario passed locally; local Kafka client logs nevertheless showed
+connection attempts to the former broker Pod IP after recreation. The headless
+service exposes changing Pod addresses directly. Kafka now retains its headless
+governing/controller service while a dedicated internal kafka-client ClusterIP
+provides a stable advertised/bootstrap endpoint. Both select the same Kafka pods;
+existing ingress/egress policies and broker ports remain unchanged. No timeout,
+retry limit, HTTP/event contract, ownership or authorization boundary is relaxed.
+Recovery E2E additionally asserts the client Service IP remains stable across
+pod recreation; positive/negative network tests use that same client endpoint.

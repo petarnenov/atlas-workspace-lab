@@ -275,7 +275,7 @@ function networkProof(mode) {
     "NetworkCheck",
     mode,
     "postgres:5432",
-    "kafka:19092",
+    "kafka-client:19092",
     "storage:9000",
   ]);
   proof.spec.backoffLimit = 0;
@@ -352,7 +352,7 @@ export function manifests() {
         KAFKA_NODE_ID: "1",
         KAFKA_PROCESS_ROLES: "broker,controller",
         KAFKA_LISTENERS: "INTERNAL://:19092,CONTROLLER://:9093",
-        KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka:19092",
+        KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka-client:19092",
         KAFKA_LISTENER_SECURITY_PROTOCOL_MAP:
           "INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT",
         KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL",
@@ -404,6 +404,13 @@ export function manifests() {
       ["asset-service", 8081],
       ["portal-ui", 8080],
     ].map(([n, p]) => service(n, p)),
+    object("v1", "Service", "kafka-client", {
+      spec: {
+        selector: label("kafka"),
+        publishNotReadyAddresses: true,
+        ports: [{ name: "broker", port: 19092, targetPort: 19092 }],
+      },
+    }),
     networkProof("allow"),
     networkProof("deny"),
     job("kafka-init", "atlas/kafka:build", [
@@ -435,7 +442,7 @@ export function manifests() {
       {
         SERVER_ADDRESS: "0.0.0.0",
         ASSET_DB_URL: "jdbc:postgresql://postgres:5432/assets",
-        KAFKA_BOOTSTRAP: "kafka:19092",
+        KAFKA_BOOTSTRAP: "kafka-client:19092",
         LAB_OBJECT_ENDPOINT: "http://storage:9000",
         LAB_SERVICE_PUBLIC_KEY: "/keys/service-public.pem",
       },
@@ -447,7 +454,7 @@ export function manifests() {
       0,
       {
         WORKER_DB_URL: "jdbc:postgresql://postgres:5432/worker_checkpoint",
-        KAFKA_BOOTSTRAP: "kafka:19092",
+        KAFKA_BOOTSTRAP: "kafka-client:19092",
         LAB_OBJECT_ENDPOINT: "http://storage:9000",
         LAB_SERVICE_PUBLIC_KEY: "/keys/service-public.pem",
         LAB_PARSER_JAR: "/app/parser.jar",
