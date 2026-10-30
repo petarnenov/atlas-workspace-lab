@@ -1,0 +1,295 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Atlas Docling internal API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/internal/v1/parse": {
+      "post": {
+        "operationId": "parseValidatedPdf",
+        "security": [
+          {
+            "parserToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/pdf": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "maxLength": 5242880
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bounded Docling conversion",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParseResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Conversion rejected or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "correlationId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "correlationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Conversion rejected or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "correlationId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "correlationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Conversion rejected or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "correlationId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "correlationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Conversion rejected or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "correlationId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "correlationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Conversion rejected or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "correlationId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "correlationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Conversion rejected or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "correlationId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "correlationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/live": {
+      "get": {
+        "operationId": "parserHealthlive",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Healthy"
+          },
+          "503": {
+            "description": "Not ready"
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "parserHealthready",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Healthy"
+          },
+          "503": {
+            "description": "Not ready"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "parserToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Dedicated ephemeral parser token, never a user token"
+      }
+    },
+    "schemas": {
+      "ParseResult": {
+        "type": "object",
+        "required": [
+          "sourceSha256",
+          "parserVersion",
+          "pipelineVersion",
+          "pageCount",
+          "markdown",
+          "document"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "sourceSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "parserVersion": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "pipelineVersion": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "pageCount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "markdown": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10485760
+          },
+          "document": {
+            "type": "object",
+            "required": [
+              "schema_name",
+              "version"
+            ],
+            "properties": {
+              "schema_name": {
+                "const": "DoclingDocument"
+              },
+              "version": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "code",
+          "correlationId"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

@@ -154,6 +154,77 @@
           }
         }
       }
+    },
+    "/api/v1/assets/{assetId}/parsed": {
+      "get": {
+        "operationId": "readParsedDocument",
+        "summary": "Read an authorized saved parsed copy",
+        "security": [
+          {
+            "demoIdentity": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "markdown",
+                "json"
+              ],
+              "default": "markdown"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed tenant-scoped artifact",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "text/markdown": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Access denied or unavailable artifact"
+          },
+          "401": {
+            "description": "Access denied or unavailable artifact"
+          },
+          "403": {
+            "description": "Access denied or unavailable artifact"
+          },
+          "404": {
+            "description": "Access denied or unavailable artifact"
+          }
+        }
+      }
     }
   },
   "components": {
