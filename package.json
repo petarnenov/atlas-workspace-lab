@@ -1,0 +1,18 @@
+{
+  "name": "atlas-workspace-lab",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Public TypeScript + Java polyglot monorepo SDD PoC",
+  "scripts": {
+    "check:scaffold": "node scripts/check-scaffold.mjs",
+    "graph": "nx graph",
+    "affected:build": "nx affected -t build",
+    "affected:test": "nx affected -t test",
+    "check:architecture": "node scripts/check-architecture.mjs",
+    "check:all": "pnpm check:scaffold && pnpm check:architecture"
+  },
+  "devDependencies": {
+    "nx": "^22.0.0"
+  },
+  "packageManager": "pnpm@10.0.0"
+}

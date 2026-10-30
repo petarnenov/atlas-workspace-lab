@@ -1,0 +1,13 @@
+{
+  "name": "processing-worker",
+  "root": "workers/processing-worker",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "command": "gradle :processing-worker:build --no-daemon"
+    },
+    "test": {
+      "command": "gradle :processing-worker:test --no-daemon"
+    }
+  }
+}

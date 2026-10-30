@@ -1,0 +1,12 @@
+node_modules/
+.nx/cache/
+dist/
+coverage/
+.gradle/
+**/build/
+.idea/
+.vscode/
+.env
+.env.*
+!.env.example
+.DS_Store

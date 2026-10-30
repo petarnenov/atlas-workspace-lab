@@ -1,0 +1,14 @@
+# Bootstrap context; refine using the pinned OpenSpec CLI during setup.
+schema: spec-driven
+context: |
+  Public polyglot monorepo demonstration with React/TypeScript and Java.
+  No Python. Generic asset workflow and synthetic data only.
+  Implementation requires human-approved proposal, design, specs and tasks.
+  Independent service ownership and versioned API/event contracts.
+rules:
+  proposal:
+    - Include issue reference, affected components and out-of-scope items.
+  design:
+    - Document service boundaries, API/event impacts and failure/security cases.
+  tasks:
+    - Include tests, quality gates and PR evidence.

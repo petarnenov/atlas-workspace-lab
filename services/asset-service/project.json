@@ -1,0 +1,13 @@
+{
+  "name": "asset-service",
+  "root": "services/asset-service",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "command": "gradle :asset-service:build --no-daemon"
+    },
+    "test": {
+      "command": "gradle :asset-service:test --no-daemon"
+    }
+  }
+}
