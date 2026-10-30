@@ -69,3 +69,13 @@ archive into the dedicated cluster, removing the archive even on failure.
 Stop queries existing workloads before scaling, so cleanup after a build failure
 also succeeds when no workloads have been created. No host Docker settings,
 cluster identity checks, contracts or security boundaries are changed.
+
+Single-platform export of a digest-only RustFS reference has no RepoTags and
+cannot preserve the original multi-platform index identity. Build now creates
+a local storage image from the same pinned upstream digest, adding only a
+runtime-identification label. Its distinct image ID and immutable tag avoid
+aliasing an existing imported multi-platform image in the CRI image cache.
+It is recorded alongside the other seven images and used for rollout and scanning.
+The storage manifest uses Never pull policy, like other locally loaded images.
+CI emits pod status and warning events on failure, without dumping environment
+variables or Secret resources.

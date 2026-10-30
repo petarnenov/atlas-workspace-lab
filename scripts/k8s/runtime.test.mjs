@@ -204,6 +204,13 @@ else if(name==='javac')console.log('javac 21.0.1');else if(name==='pnpm')console
     assert.throws(() => r.kubectl([], undefined, "unrelated"));
     assert.throws(() => r.apply([], () => assert.fail("empty stage")));
     const rendered = r.rendered(images);
+    assert.equal(
+      rendered.find(
+        (x) => x.kind === "StatefulSet" && x.metadata.name === "storage",
+      ).spec.template.spec.containers[0].image,
+      images.storage,
+    );
+    assert.equal(Object.keys(images).length, 8);
     assert.ok(rendered.length > 30);
     assert.throws(() => r.rendered({}));
     assert.throws(() => r.rendered({ "workspace-api": "latest" }));

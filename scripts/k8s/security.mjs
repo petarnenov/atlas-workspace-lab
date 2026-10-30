@@ -1,5 +1,5 @@
 import { readFileSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
-import { execute, rendered, root, versions } from "./runtime.mjs";
+import { execute, rendered, root } from "./runtime.mjs";
 const images = JSON.parse(readFileSync(`${root}/images.json`));
 mkdirSync(`${root}/security`, { recursive: true });
 rmSync(`${root}/security/manifests`, { recursive: true, force: true });
@@ -22,10 +22,7 @@ execute(".local/tools/trivy", [
 const config = JSON.parse(readFileSync(`${root}/security/config.json`));
 if (!config.Results?.some((result) => result.Type === "kubernetes"))
   throw Error("Kubernetes manifests were not scanned.");
-for (const [name, image] of [
-  ...Object.entries(images),
-  ["storage", versions.storage],
-])
+for (const [name, image] of Object.entries(images))
   execute(
     ".local/tools/trivy",
     [

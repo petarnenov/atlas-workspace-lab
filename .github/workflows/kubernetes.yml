@@ -29,6 +29,14 @@ jobs:
       - run: make k8s-test
       - run: make install-trivy
       - run: make k8s-security
+      - name: Show pod status after failure
+        if: failure()
+        run: |
+          node --input-type=module <<'JS'
+          import { kubectl } from './scripts/k8s/runtime.mjs';
+          kubectl(['get', 'pods', '-o', 'wide']);
+          kubectl(['get', 'events', '--field-selector=type=Warning', '-o', 'custom-columns=REASON:.reason,MESSAGE:.message']);
+          JS
       - uses: actions/upload-artifact@v4
         if: always()
         with:

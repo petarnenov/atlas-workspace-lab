@@ -305,7 +305,6 @@ function allow(name, from, to, port) {
   ];
 }
 export function manifests() {
-  const v = JSON.parse(readFileSync("infra/k8s/versions.json"));
   const items = [
     {
       apiVersion: "v1",
@@ -385,7 +384,7 @@ export function manifests() {
     stateful(
       "storage",
       9000,
-      v.storage,
+      "atlas/storage:build",
       {
         RUSTFS_ACCESS_KEY: "local_admin",
         RUSTFS_CONSOLE_ENABLE: "false",

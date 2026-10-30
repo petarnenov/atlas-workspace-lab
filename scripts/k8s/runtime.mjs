@@ -464,8 +464,14 @@ export function build() {
       "\nCOPY --chmod=0555 bootstrap.sh /bootstrap.sh\nENV HOME=/tmp\nUSER 10001:10001\n",
   );
   record("storage-init", [storage]);
-  execute("docker", ["pull", versions.storage]);
-  loadImages([...Object.values(built), versions.storage]);
+  const storageRuntime = `${root}/build/storage`;
+  mkdirSync(storageRuntime, { recursive: true });
+  writeFileSync(
+    `${storageRuntime}/Dockerfile`,
+    `FROM ${versions.storage}\nLABEL org.atlas-lab.runtime="local-kubernetes"\n`,
+  );
+  record("storage", [storageRuntime]);
+  loadImages(Object.values(built));
   writeFileSync(`${root}/images.json`, JSON.stringify(built, null, 2) + "\n", {
     mode: 0o600,
   });
