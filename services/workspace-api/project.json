@@ -1,0 +1,13 @@
+{
+  "name": "workspace-api",
+  "root": "services/workspace-api",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "command": "gradle :workspace-api:build --no-daemon"
+    },
+    "test": {
+      "command": "gradle :workspace-api:test --no-daemon"
+    }
+  }
+}
