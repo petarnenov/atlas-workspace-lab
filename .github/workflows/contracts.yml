@@ -1,0 +1,30 @@
+name: LAB-101 contract validation
+
+on:
+  pull_request:
+    paths:
+      - 'contracts/**'
+      - '.github/workflows/contracts.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'contracts/**'
+      - '.github/workflows/contracts.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract-standards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Parse source contracts and assert critical invariants
+        run: node scripts/check-contracts.mjs
+      - name: Validate OpenAPI 3.1 schema
+        run: npx --yes @redocly/cli@2 lint contracts/openapi/asset-api.v1.json contracts/openapi/asset-internal.v1.json --extends=spec
+      - name: Validate AsyncAPI 3 schema
+        run: npx --yes @asyncapi/cli validate contracts/asyncapi/asset-events.v1.json --fail-severity error

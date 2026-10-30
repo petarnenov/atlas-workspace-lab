@@ -1,0 +1,263 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Atlas Sample Asset HTTP API",
+    "version": "1.0.0",
+    "description": "Contract proposal; not implementation approval. Public workspace-api routes requests to private asset-service. Credentials and tenant identity MUST be verified server-side."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local demo only"
+    }
+  ],
+  "paths": {
+    "/api/v1/assets": {
+      "post": {
+        "operationId": "uploadAsset",
+        "summary": "Upload a synthetic sample PDF",
+        "security": [
+          {
+            "demoIdentity": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": "Recommended for safely retrying POST without creating a new asset"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PDF, maximum 5 MiB; content signature is validated"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Asset accepted for asynchronous processing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or malformed PDF",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid trusted identity context"
+          },
+          "403": {
+            "description": "Access denied"
+          },
+          "413": {
+            "description": "File exceeds 5 MiB limit"
+          },
+          "415": {
+            "description": "Unsupported media type"
+          },
+          "500": {
+            "description": "Internal service error"
+          },
+          "503": {
+            "description": "Dependency temporarily unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/assets/{assetId}": {
+      "get": {
+        "operationId": "getAssetStatus",
+        "summary": "Read tenant-authorized asset status",
+        "security": [
+          {
+            "demoIdentity": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current processing status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or malformed PDF",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid trusted identity context"
+          },
+          "403": {
+            "description": "Access denied"
+          },
+          "404": {
+            "description": "Asset not found or inaccessible"
+          },
+          "500": {
+            "description": "Internal service error"
+          },
+          "503": {
+            "description": "Dependency temporarily unavailable"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "demoIdentity": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "SyntheticPoCIdentity",
+        "description": "Synthetic signed test token, never production identity; server-side validation required. No client-chosen tenant headers."
+      }
+    },
+    "schemas": {
+      "AssetStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "PROCESSING",
+          "COMPLETED",
+          "FAILED"
+        ]
+      },
+      "AssetReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assetId",
+          "status",
+          "correlationId"
+        ],
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssetStatus"
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "AssetDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assetId",
+          "status",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssetStatus"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errorCode": {
+            "type": "string",
+            "enum": [
+              "INVALID_DOCUMENT",
+              "PROCESSING_ERROR",
+              "RETRY_EXHAUSTED"
+            ]
+          }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "message",
+          "correlationId"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      }
+    }
+  }
+}
