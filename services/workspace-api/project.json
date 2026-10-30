@@ -2,12 +2,36 @@
   "name": "workspace-api",
   "root": "services/workspace-api",
   "projectType": "application",
+  "implicitDependencies": [
+    "demo-support"
+  ],
   "targets": {
     "build": {
-      "command": "gradle :workspace-api:build --no-daemon"
+      "command": "./gradlew :workspace-api:assemble --no-daemon",
+      "inputs": [
+        "default",
+        "javaBuild",
+        "^default"
+      ],
+      "outputs": [
+        "{projectRoot}/build/libs"
+      ]
     },
     "test": {
-      "command": "gradle :workspace-api:test --no-daemon"
+      "command": "./gradlew :workspace-api:test --no-daemon",
+      "inputs": [
+        "default",
+        "javaBuild",
+        "^default"
+      ]
+    },
+    "coverage": {
+      "command": "node scripts/local/run.mjs ./gradlew :workspace-api:test :workspace-api:jacocoTestCoverageVerification -Pintegration --no-daemon",
+      "inputs": [
+        "default",
+        "javaBuild",
+        "^default"
+      ]
     }
   }
 }
