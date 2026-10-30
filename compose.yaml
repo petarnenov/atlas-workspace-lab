@@ -89,7 +89,6 @@ services:
     image: atlas-lab-docling-parser
     build: { context: ./services/docling-parser }
     env_file: [.local/parser.env]
-    ports: ["127.0.0.1:8083:8083"]
     read_only: true
     user: "10001:10001"
     cap_drop: [ALL]

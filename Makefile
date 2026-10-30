@@ -39,6 +39,7 @@ test: ## Run parser, tooling, Java, frontend, integration and E2E sequentially
 	$(MAKE) test-integration
 	$(MAKE) test-e2e
 test-tools: ## Test Make helpers with measured coverage gates
+	node --test --experimental-test-coverage --test-coverage-include='scripts/local/parsed-copy.mjs' --test-coverage-include='scripts/local/parser-credentials.mjs' --test-coverage-include='scripts/local/parser-forward.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/local/parsed-copy.test.mjs scripts/local/parser-forward.test.mjs
 	node --test --experimental-test-coverage --test-coverage-include='scripts/local/make-tools.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/local/make-tools.test.mjs
 test-java: ## Run Java unit tests
 	pnpm test:java

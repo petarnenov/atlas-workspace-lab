@@ -15,4 +15,4 @@ jobs:
         with:
           node-version: '24'
       - run: make parser-test
-      - run: node --test --experimental-test-coverage --test-coverage-include='scripts/local/parsed-copy.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/local/parsed-copy.test.mjs
+      - run: node --test --experimental-test-coverage --test-coverage-include='scripts/local/parsed-copy.mjs' --test-coverage-include='scripts/local/parser-credentials.mjs' --test-coverage-include='scripts/local/parser-forward.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/local/parsed-copy.test.mjs scripts/local/parser-forward.test.mjs

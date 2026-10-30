@@ -25,7 +25,7 @@ COPY --from=runtime-deps /package-status /var/lib/dpkg/status.d
 WORKDIR /app
 COPY --from=build /app/.venv /app/.venv
 COPY --from=build /models /models
-COPY parser_service.py convert.py models.json ./
+COPY parser_service.py convert.py stdio_bridge.py models.json ./
 ENV PATH=/app/.venv/bin:/usr/local/bin LD_LIBRARY_PATH=/usr/local/lib PYTHONDONTWRITEBYTECODE=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HOME=/tmp OMP_NUM_THREADS=2 TOKENIZERS_PARALLELISM=false
 USER 10001:10001
 EXPOSE 8083

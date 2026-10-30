@@ -8,3 +8,4 @@
 !convert.py
 !tests/
 !tests/**
+!stdio_bridge.py

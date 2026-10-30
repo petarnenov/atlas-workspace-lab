@@ -18,4 +18,4 @@ torchvision = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=parser_service --cov=convert --cov-report=term-missing --cov-fail-under=75"
+addopts = "--cov=parser_service --cov=convert --cov=stdio_bridge --cov-report=term-missing --cov-fail-under=75"

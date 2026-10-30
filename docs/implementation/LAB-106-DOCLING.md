@@ -61,7 +61,9 @@ allowed. Read-only, non-root containers have no storage/DB credentials, shell,
 package manager or service account token. A dedicated domain-separated ephemeral
 parser credential is mounted in Kubernetes Secret `parser-access` only in the
 worker and parser. Existing DB credentials and immutable Secrets are preserved.
-Local Compose uses an ignored credential env file and one loopback parser instance;
+Local Compose uses an ignored credential env file and one isolated parser instance.
+The Node application harness forwards loopback HTTP over a fixed Docker exec/stdin
+bridge; the parser stays on an internal-only network without a published host port;
 native Kubernetes and both Helm profiles use three replicas.
 
 ## Bounds and failure semantics
