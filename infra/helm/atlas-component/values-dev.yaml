@@ -10,7 +10,8 @@
     "storage-bootstrap": "storage-bootstrap",
     "api-identity": "api-identity",
     "asset-runtime": "asset-runtime",
-    "worker-runtime": "worker-runtime"
+    "worker-runtime": "worker-runtime",
+    "parser-access": "parser-access"
   },
   "replicas": {
     "portal-ui": 1,
@@ -19,7 +20,8 @@
     "processing-worker": 1,
     "postgres": 1,
     "kafka": 1,
-    "storage": 1
+    "storage": 1,
+    "docling-parser": 3
   },
   "resources": {
     "portal-ui": {
@@ -90,6 +92,16 @@
       "limits": {
         "cpu": "1000m",
         "memory": "512Mi"
+      }
+    },
+    "docling-parser": {
+      "requests": {
+        "cpu": "500m",
+        "memory": "1024Mi"
+      },
+      "limits": {
+        "cpu": "2000m",
+        "memory": "2048Mi"
       }
     }
   },

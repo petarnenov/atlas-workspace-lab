@@ -210,7 +210,7 @@ else if(name==='javac')console.log('javac 21.0.1');else if(name==='pnpm')console
       ).spec.template.spec.containers[0].image,
       images.storage,
     );
-    assert.equal(Object.keys(images).length, 8);
+    assert.equal(Object.keys(images).length, 9);
     assert.ok(rendered.length > 30);
     assert.throws(() => r.rendered({}));
     assert.throws(() => r.rendered({ "workspace-api": "latest" }));
@@ -280,7 +280,7 @@ else if(name==='javac')console.log('javac 21.0.1');else if(name==='pnpm')console
     r.reconcileSecrets(objects, (args) =>
       args[0] === "get" ? JSON.stringify({ items: [] }) : (writes++, ""),
     );
-    assert.equal(writes, 6);
+    assert.equal(writes, 7);
     assert.ok(r.token().split(".").length === 3);
     assert.ok(r.token("b"));
     assert.throws(() => r.token("other"));

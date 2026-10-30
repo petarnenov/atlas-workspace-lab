@@ -1,3 +1,4 @@
+import {syntheticPdf as pdf} from './fixtures/pdf';
 import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { sign, randomUUID } from "node:crypto";
@@ -21,24 +22,6 @@ function token(tenant = "a") {
     Buffer.from(JSON.stringify(x)).toString("base64url");
   const value = `${encode({ alg: "RS256", typ: "JWT" })}.${encode({ iss: "lab-fixture", aud: "workspace-api", sub: "synthetic-user", tenantId: tenant === "a" ? "11111111-1111-4111-8111-111111111111" : "22222222-2222-4222-8222-222222222222", iat: now, nbf: now, exp: now + 300 })}`;
   return `${value}.${sign("RSA-SHA256", Buffer.from(value), readFileSync(".local/fixture-private.pem")).toString("base64url")}`;
-}
-function pdf() {
-  let body = "%PDF-1.4\n";
-  const offsets = [0];
-  for (const [n, object] of [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] >>",
-  ].entries()) {
-    offsets.push(Buffer.byteLength(body));
-    body += `${n + 1} 0 obj\n${object}\nendobj\n`;
-  }
-  const xref = Buffer.byteLength(body);
-  body += "xref\n0 4\n0000000000 65535 f \n";
-  for (const offset of offsets.slice(1))
-    body += `${String(offset).padStart(10, "0")} 00000 n \n`;
-  body += `trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
-  return Buffer.from(body);
 }
 const uploadFile = (
   buffer = pdf(),
@@ -87,6 +70,11 @@ test("real UI upload reaches completed through Kafka and bounded PDF worker", as
   await expect(
     page.getByRole("heading", { name: "Processing complete" }),
   ).toBeVisible({ timeout: 40_000 });
+  const parsed = await page.request.get(`/api/v1/assets/${receipt.assetId}/parsed`, {headers:{Authorization:`Bearer ${token()}`}});
+  expect(parsed.status()).toBe(200);
+  expect(await parsed.text()).toContain('Atlas synthetic document');
+  const foreign = await page.request.get(`/api/v1/assets/${receipt.assetId}/parsed`, {headers:{Authorization:`Bearer ${token('b')}`} });
+  expect(foreign.status()).toBe(404);
   const uploaded = JSON.parse(
     db(`SELECT payload FROM upload_outbox WHERE asset_id='${receipt.assetId}'`),
   );

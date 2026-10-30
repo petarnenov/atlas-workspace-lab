@@ -8,7 +8,9 @@ permissions:
 jobs:
   helm-environments:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
+    env:
+      ATLAS_SEQUENTIAL_PARSER_TESTS: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,10 +28,23 @@ jobs:
       - run: make helm-build ENV=dev
       - run: make helm-lint ENV=dev
       - run: make helm-up ENV=dev
+      - name: Release dev parser CPU reservations while preparing prod
+        run: |
+          node --input-type=module <<'JS'
+          import {upgrade,values} from './scripts/helm/runtime.mjs';
+          upgrade('dev','docling-parser',{...values('dev','docling-parser'),stopped:true});
+          JS
       - run: make helm-setup ENV=prod
       - run: make helm-build ENV=prod
       - run: make helm-lint ENV=prod
       - run: make helm-up ENV=prod
+      - name: Start dev parser for sequential profile verification on a four CPU runner
+        run: |
+          node --input-type=module <<'JS'
+          import {upgrade,values} from './scripts/helm/runtime.mjs';
+          upgrade('prod','docling-parser',{...values('prod','docling-parser'),stopped:true});
+          upgrade('dev','docling-parser');
+          JS
       - run: pnpm exec playwright install --with-deps chromium
       - run: make helm-test
       - run: make install-trivy

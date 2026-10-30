@@ -52,6 +52,18 @@
             "imagePullPolicy": "Never",
             "env": [
               {
+                "name": "SERVER_ADDRESS",
+                "value": "0.0.0.0"
+              },
+              {
+                "name": "LAB_DOCLING_URL",
+                "value": "http://docling-parser:8083"
+              },
+              {
+                "name": "LAB_PARSER_TOKEN_FILE",
+                "value": "/parser-keys/parser-token"
+              },
+              {
                 "name": "WORKER_DB_URL",
                 "value": "jdbc:postgresql://postgres:5432/worker_checkpoint"
               },
@@ -121,6 +133,11 @@
                 "name": "keys",
                 "mountPath": "/keys",
                 "readOnly": true
+              },
+              {
+                "name": "parser-keys",
+                "mountPath": "/parser-keys",
+                "readOnly": true
               }
             ],
             "readinessProbe": {
@@ -161,7 +178,7 @@
           {
             "name": "keys",
             "secret": {
-              "secretName": "worker-runtime",
+              "secretName": {{ index .Values.secretRefs "worker-runtime" | toJson }},
               "defaultMode": 288,
               "items": [
                 {
@@ -169,6 +186,13 @@
                   "path": "service-public.pem"
                 }
               ]
+            }
+          },
+          {
+            "name": "parser-keys",
+            "secret": {
+              "secretName": {{ index .Values.secretRefs "parser-access" | toJson }},
+              "defaultMode": 288
             }
           }
         ]

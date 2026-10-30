@@ -1,7 +1,7 @@
 # Architecture Principles — Atlas Workspace Lab
 
 **Status:** Adopted as PoC design guardrails (not a claim of adoption by any other project).
-**Scope:** Public educational PoC; TypeScript/React and Java only; no private source, tenant data, or internal company identifiers.
+**Scope:** Public educational PoC; TypeScript/React and Java, with Python restricted to the approved LAB-106 Docling service and its tests/build; no private source, tenant data, or internal company identifiers.
 **Ownership:** Repository owner reviews exceptions and cross-component decisions.
 **Application:** Requirements, OpenSpec changes, architectural reviews, code reviews, CI/CD, and release evidence.
 

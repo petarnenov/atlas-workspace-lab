@@ -25,12 +25,14 @@ ui: ## Start Vite on loopback
 	pnpm --filter @atlas/portal-ui dev --host 127.0.0.1
 token: ## Generate synthetic token (TENANT=a or b)
 	@node -e 'const t=process.env.TENANT;if(!["a","b"].includes(t)){console.error("TENANT must be a or b");process.exit(1)}const r=require("node:child_process").spawnSync(process.execPath,["scripts/local/token.mjs",t],{stdio:"inherit"});process.exit(r.status??1)'
-build: ## Assemble Java artifacts and build UI
+build: ## Assemble Java artifacts, UI and parser image
 	./gradlew assemble --no-daemon
 	$(MAKE) build-ui
+	$(MAKE) parser-build
 build-ui: ## Typecheck and build UI
 	pnpm --filter @atlas/portal-ui build
-test: ## Run tooling, Java, frontend, integration and E2E sequentially
+test: ## Run parser, tooling, Java, frontend, integration and E2E sequentially
+	$(MAKE) parser-test
 	$(MAKE) test-tools
 	$(MAKE) test-java
 	$(MAKE) test-frontend
@@ -140,3 +142,14 @@ helm-test: ## Run Helm helper coverage, chart checks and real two-environment E2
 	pnpm exec playwright test --config playwright.helm.config.ts
 helm-security: ## Scan charts, rendered profiles and their deployed images
 	node scripts/helm/security.mjs
+
+FORMAT ?= markdown
+export ASSET_ID FORMAT
+.PHONY: parsed-copy parser-build parser-test
+parsed-copy: ## Show authorized saved parsed PDF (ENV=dev ASSET_ID=uuid FORMAT=markdown|json TENANT=a|b)
+	@node scripts/local/parsed-copy.mjs
+parser-build: ## Build independently deployable locked offline Docling image
+	docker build --provenance=false -t atlas/docling-parser:candidate services/docling-parser
+parser-test: ## Run parser unit/quality checks and measured Python coverage in container
+	docker build --target test -t atlas/docling-parser:test services/docling-parser
+	docker run --rm --network=none atlas/docling-parser:test

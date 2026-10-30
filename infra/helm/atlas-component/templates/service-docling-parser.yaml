@@ -1,0 +1,32 @@
+{{ include "atlas-component.guard" . }}
+{{ if eq .Values.component "docling-parser" }}
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "name": "docling-parser",
+    "namespace": {{ .Release.Namespace | toJson }},
+    "labels": {
+      "app.kubernetes.io/managed-by": "Helm",
+      "app.kubernetes.io/part-of": "atlas-workspace-lab",
+      "atlas-lab/environment": {{ .Values.environment | toJson }}
+    },
+    "annotations": {
+      "meta.helm.sh/release-name": {{ .Release.Name | toJson }},
+      "meta.helm.sh/release-namespace": {{ .Release.Namespace | toJson }}
+    }
+  },
+  "spec": {
+    "selector": {
+      "app": "docling-parser"
+    },
+    "ports": [
+      {
+        "name": "main",
+        "port": 8083,
+        "targetPort": 8083
+      }
+    ]
+  }
+}
+{{ end }}

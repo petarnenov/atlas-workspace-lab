@@ -16,16 +16,20 @@ public class WorkerEvents {
   final Checkpoints checkpoints;
   final ObjectsStore objects;
   final Sandbox sandbox;
+  final ParserClient parser;
+  long renewalMillis = 15000;
   final KafkaTemplate<String, String> kafka;
 
   public WorkerEvents(
       Checkpoints checkpoints,
       ObjectsStore objects,
       Sandbox sandbox,
+      ParserClient parser,
       KafkaTemplate<String, String> kafka) {
     this.checkpoints = checkpoints;
     this.objects = objects;
     this.sandbox = sandbox;
+    this.parser = parser;
     this.kafka = kafka;
   }
 
@@ -51,21 +55,90 @@ public class WorkerEvents {
       finish(lease, input, "RETRY_EXHAUSTED");
       return;
     }
+    var lost = new java.util.concurrent.atomic.AtomicBoolean();
+    Thread processing = Thread.currentThread();
+    Object renewalLock = new Object();
+    var active = new java.util.concurrent.atomic.AtomicBoolean(true);
+    var renewal = java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
+    renewal.scheduleAtFixedRate(
+        () -> {
+          synchronized (renewalLock) {
+            if (!active.get()) return;
+            try {
+              if (checkpoints.renew(lease)) return;
+            } catch (Exception unavailable) {
+              /* Fail closed when ownership cannot be verified. */
+            }
+            lost.set(true);
+            processing.interrupt();
+          }
+        },
+        renewalMillis,
+        renewalMillis,
+        TimeUnit.MILLISECONDS);
+    boolean parsing = false;
     try {
-      String error = sandbox.inspect(objects.get(input.objectKey()));
-      finish(lease, input, error);
+      byte[] bytes = objects.get(input.objectKey());
+      String error = sandbox.inspect(bytes);
+      if (lost.get()) return;
+      if (error != null) {
+        finish(lease, input, error);
+        return;
+      }
+      LOG.info(
+          "parser_started eventId={} assetId={} correlationId={}",
+          input.eventId(),
+          input.assetId(),
+          input.correlationId());
+      parsing = true;
+      var parsed = parser.parse(bytes);
+      if (lost.get()) return;
+      if (checkpoints.finishParsed(lease, input, parsed)) {
+        LOG.info(
+            "parser_saved eventId={} assetId={} correlationId={}",
+            input.eventId(),
+            input.assetId(),
+            input.correlationId());
+        LOG.info(
+            "outcome_saved eventId={} assetId={} correlationId={} status=COMPLETED errorCode=NONE",
+            input.eventId(),
+            input.assetId(),
+            input.correlationId());
+      } else {
+        LOG.warn(
+            "outcome_not_saved eventId={} assetId={} correlationId={} reason=STALE_FENCE",
+            input.eventId(),
+            input.assetId(),
+            input.correlationId());
+      }
+    } catch (ParserClient.Rejected permanent) {
+      if (!lost.get()) finish(lease, input, "PROCESSING_ERROR");
     } catch (Exception transientFailure) {
+      if (lost.get()) return;
       if (attempts >= 3) finish(lease, input, "RETRY_EXHAUSTED");
       else {
         checkpoints.retry(lease);
+        if (parsing)
+          LOG.warn(
+              "parser_retry eventId={} assetId={} correlationId={} attempt={}",
+              input.eventId(),
+              input.assetId(),
+              input.correlationId(),
+              attempts);
         LOG.warn(
             "retry_scheduled eventId={} assetId={} correlationId={} attempt={}"
-                + " reason=OBJECT_UNAVAILABLE",
+                + " reason=DEPENDENCY_UNAVAILABLE",
             input.eventId(),
             input.assetId(),
             input.correlationId(),
             attempts);
       }
+    } finally {
+      synchronized (renewalLock) {
+        active.set(false);
+        if (lost.get()) Thread.interrupted();
+      }
+      renewal.shutdownNow();
     }
   }
 

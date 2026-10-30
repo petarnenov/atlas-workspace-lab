@@ -15,7 +15,10 @@
   ],
   "properties": {
     "environment": {
-      "enum": ["dev", "prod"]
+      "enum": [
+        "dev",
+        "prod"
+      ]
     },
     "syntheticDemo": {
       "const": true
@@ -25,7 +28,8 @@
         "portal-ui",
         "workspace-api",
         "asset-service",
-        "processing-worker"
+        "processing-worker",
+        "docling-parser"
       ]
     },
     "stopped": {
@@ -42,7 +46,8 @@
         "postgres",
         "kafka",
         "storage",
-        "storage-init"
+        "storage-init",
+        "docling-parser"
       ],
       "properties": {
         "portal-ui": {
@@ -76,6 +81,10 @@
         "storage-init": {
           "type": "string",
           "pattern": "^atlas/storage-init:[a-f0-9]{64}$"
+        },
+        "docling-parser": {
+          "type": "string",
+          "pattern": "^atlas/docling-parser:[a-f0-9]{64}$"
         }
       }
     },
@@ -88,7 +97,8 @@
         "storage-bootstrap",
         "api-identity",
         "asset-runtime",
-        "worker-runtime"
+        "worker-runtime",
+        "parser-access"
       ],
       "properties": {
         "postgres-admin": {
@@ -108,6 +118,9 @@
         },
         "worker-runtime": {
           "const": "worker-runtime"
+        },
+        "parser-access": {
+          "const": "parser-access"
         }
       }
     },
@@ -121,7 +134,8 @@
         "processing-worker",
         "postgres",
         "kafka",
-        "storage"
+        "storage",
+        "docling-parser"
       ],
       "properties": {
         "portal-ui": {
@@ -158,6 +172,11 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 1
+        },
+        "docling-parser": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 3
         }
       }
     },
@@ -171,18 +190,25 @@
         "processing-worker",
         "postgres",
         "kafka",
-        "storage"
+        "storage",
+        "docling-parser"
       ],
       "properties": {
         "portal-ui": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["requests", "limits"],
+          "required": [
+            "requests",
+            "limits"
+          ],
           "properties": {
             "requests": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["cpu", "memory"],
+              "required": [
+                "cpu",
+                "memory"
+              ],
               "properties": {
                 "cpu": {
                   "type": "string",
@@ -197,7 +223,10 @@
             "limits": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["cpu", "memory"],
+              "required": [
+                "cpu",
+                "memory"
+              ],
               "properties": {
                 "cpu": {
                   "type": "string",
@@ -214,12 +243,18 @@
         "workspace-api": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["requests", "limits"],
+          "required": [
+            "requests",
+            "limits"
+          ],
           "properties": {
             "requests": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["cpu", "memory"],
+              "required": [
+                "cpu",
+                "memory"
+              ],
               "properties": {
                 "cpu": {
                   "type": "string",
@@ -234,7 +269,10 @@
             "limits": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["cpu", "memory"],
+              "required": [
+                "cpu",
+                "memory"
+              ],
               "properties": {
                 "cpu": {
                   "type": "string",
@@ -251,12 +289,18 @@
         "asset-service": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["requests", "limits"],
+          "required": [
+            "requests",
+            "limits"
+          ],
           "properties": {
             "requests": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["cpu", "memory"],
+              "required": [
+                "cpu",
+                "memory"
+              ],
               "properties": {
                 "cpu": {
                   "type": "string",
@@ -271,7 +315,10 @@
             "limits": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["cpu", "memory"],
+              "required": [
+                "cpu",
+                "memory"
+              ],
               "properties": {
                 "cpu": {
                   "type": "string",
@@ -288,12 +335,18 @@
         "processing-worker": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["requests", "limits"],
+          "required": [
+            "requests",
+            "limits"
+          ],
           "properties": {
             "requests": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["cpu", "memory"],
+              "required": [
+                "cpu",
+                "memory"
+              ],
               "properties": {
                 "cpu": {
                   "type": "string",
@@ -308,7 +361,10 @@
             "limits": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["cpu", "memory"],
+              "required": [
+                "cpu",
+                "memory"
+              ],
               "properties": {
                 "cpu": {
                   "type": "string",
@@ -325,12 +381,18 @@
         "postgres": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["requests", "limits"],
+          "required": [
+            "requests",
+            "limits"
+          ],
           "properties": {
             "requests": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["cpu", "memory"],
+              "required": [
+                "cpu",
+                "memory"
+              ],
               "properties": {
                 "cpu": {
                   "type": "string",
@@ -345,7 +407,10 @@
             "limits": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["cpu", "memory"],
+              "required": [
+                "cpu",
+                "memory"
+              ],
               "properties": {
                 "cpu": {
                   "type": "string",
@@ -362,12 +427,18 @@
         "kafka": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["requests", "limits"],
+          "required": [
+            "requests",
+            "limits"
+          ],
           "properties": {
             "requests": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["cpu", "memory"],
+              "required": [
+                "cpu",
+                "memory"
+              ],
               "properties": {
                 "cpu": {
                   "type": "string",
@@ -382,7 +453,10 @@
             "limits": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["cpu", "memory"],
+              "required": [
+                "cpu",
+                "memory"
+              ],
               "properties": {
                 "cpu": {
                   "type": "string",
@@ -399,12 +473,18 @@
         "storage": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["requests", "limits"],
+          "required": [
+            "requests",
+            "limits"
+          ],
           "properties": {
             "requests": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["cpu", "memory"],
+              "required": [
+                "cpu",
+                "memory"
+              ],
               "properties": {
                 "cpu": {
                   "type": "string",
@@ -419,7 +499,56 @@
             "limits": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["cpu", "memory"],
+              "required": [
+                "cpu",
+                "memory"
+              ],
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*m$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*Mi$"
+                }
+              }
+            }
+          }
+        },
+        "docling-parser": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "requests",
+            "limits"
+          ],
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "cpu",
+                "memory"
+              ],
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*m$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*Mi$"
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "cpu",
+                "memory"
+              ],
               "properties": {
                 "cpu": {
                   "type": "string",
@@ -436,7 +565,10 @@
       }
     },
     "storageSize": {
-      "enum": ["2Gi", "4Gi"]
+      "enum": [
+        "2Gi",
+        "4Gi"
+      ]
     }
   }
 }

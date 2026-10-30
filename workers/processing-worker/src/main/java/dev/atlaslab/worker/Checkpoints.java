@@ -86,6 +86,38 @@ public class Checkpoints {
         == 1;
   }
 
+  public boolean renew(Map<String, Object> lease) {
+    return db.update(
+            "UPDATE checkpoint SET lease_until=now()+interval '60 seconds' WHERE event_id=?::uuid"
+                + " AND fence=? AND lease_until>now() AND outcome IS NULL",
+            lease.get("event_id").toString(),
+            lease.get("fence"))
+        == 1;
+  }
+
+  public boolean finishParsed(
+      Map<String, Object> lease, Wire.Event input, ParserClient.Parsed parsed) {
+    return Boolean.TRUE.equals(
+        tx.execute(
+            status -> {
+              if (!finish(lease, Wire.outcome(input, null))) return false;
+              db.update(
+                  "INSERT INTO"
+                      + " parsed_document(tenant_id,asset_id,event_id,source_sha256,parser_version,pipeline_version,page_count,markdown,document)"
+                      + " VALUES(?::uuid,?::uuid,?::uuid,?,?,?,?,?,?)",
+                  input.tenantId(),
+                  input.assetId(),
+                  input.eventId(),
+                  parsed.hash(),
+                  parsed.version(),
+                  parsed.pipeline(),
+                  parsed.pages(),
+                  parsed.markdown(),
+                  parsed.document());
+              return true;
+            }));
+  }
+
   public void retry(Map<String, Object> lease) {
     db.update(
         "UPDATE checkpoint SET lease_until=NULL,next_at=now()+((power(2,attempts-1))::text||'"

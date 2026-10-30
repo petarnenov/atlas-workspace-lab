@@ -26,12 +26,12 @@ function scan(dir) {
   if (!existsSync(dir)) return;
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (
-      ["node_modules", ".gradle", "build", "dist", ".git"].includes(entry.name)
+      ["node_modules", ".gradle", "build", "dist", ".git", ".venv", "__pycache__", ".pytest_cache"].includes(entry.name)
     )
       continue;
     const path = join(dir, entry.name);
     const normalized = relative(".", path).replaceAll("\\", "/");
-    if (banned.some((pattern) => pattern.test(normalized)))
+    if (!normalized.startsWith("services/docling-parser/") && banned.some((pattern) => pattern.test(normalized)))
       matches.push(normalized);
     if (entry.isFile() && entry.name.endsWith(".java")) {
       const source = readFileSync(path, "utf8");
@@ -59,7 +59,7 @@ for (const root of roots) scan(root);
 if (matches.length)
   throw new Error(`Unexpected Python files: ${matches.join(", ")}`);
 
-console.log("P01–P21 document, Codex reference, and no-Python checks passed.");
+console.log("P01–P21 document, Codex reference, and scoped Python exception checks passed.");
 console.log(
   "NOTE: This does not prove runtime security, contract compatibility, or architectural correctness.",
 );

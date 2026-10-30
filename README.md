@@ -17,7 +17,9 @@ flowchart LR
   Asset --> S3[(RustFS S3 objects)]
   Asset --> Kafka[Kafka events]
   Kafka --> Worker[Java PDF worker]
-  Worker --> Checkpoint[(Worker checkpoint database)]
+  Worker --> Checkpoint[(Worker checkpoints and parsed copies)]
+  Worker --> Parser[Docling parser x3 in Kubernetes]
+  BFF --> Worker
   Worker --> S3
   Worker --> Kafka
   Kafka --> Asset
@@ -32,7 +34,7 @@ the official AWS S3 SDK and the approved HTTP/event contracts are unchanged.
 ## Run locally
 
 Requires JDK 21, Node.js 24, pnpm 10 (Corepack), Docker with Compose, and ports
-5173, 8080, 8081, 5432, 9092 and 9000 available. Run from the repository root.
+5173, 8080, 8081, 8082, 8083, 5432, 9092 and 9000 available. Run from the repository root.
 
 ```sh
 make doctor
@@ -84,7 +86,9 @@ A scaffold check alone provides no application verification.
 
 See the [operations runbook](docs/implementation/LAB-101-RUNBOOK.md) for failure
 handling, limitations, dependency provenance and rollback. Builds are coordinated
-with Nx/pnpm and Gradle; no Python or AI/model runtime is deployed.
+with Nx/pnpm and Gradle. LAB-106 adds a separately deployed Python/Docling
+converter with local pinned layout/table models under the approved narrow Python
+exception; no RAG, embedding or external inference is deployed.
 
 ## Make command reference
 
@@ -166,3 +170,17 @@ Use `helm-setup`, `helm-build`, `helm-up`, `helm-forward`, `helm-status`,
 `helm-security` for individual operations. See the
 [Helm runbook](docs/implementation/LAB-104-RUNBOOK.md) for rollback, isolation,
 verification and demo limitations.
+
+## Saved parsed PDF copies (LAB-106)
+
+Docling runs after worker validation and stores Markdown/JSON in the worker-owned
+database. Kubernetes dev and prod demo each configure three parser replicas.
+See [Docling runbook](docs/implementation/LAB-106-DOCLING.md) for initial setup,
+limits, independent deployment and retrieval:
+
+```sh
+make parsed-copy ENV=dev ASSET_ID=<asset-uuid>
+make parsed-copy ENV=dev ASSET_ID=<asset-uuid> FORMAT=json
+make helm-build ENV=dev SERVICE=docling-parser
+make helm-deploy ENV=dev SERVICE=docling-parser
+```

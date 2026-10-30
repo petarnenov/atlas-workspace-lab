@@ -57,6 +57,10 @@
                 "value": "http://asset-service:8081"
               },
               {
+                "name": "LAB_WORKER_URL",
+                "value": "http://processing-worker:8082"
+              },
+              {
                 "name": "LAB_FIXTURE_PUBLIC_KEY",
                 "value": "/keys/fixture-public.pem"
               },
@@ -127,7 +131,7 @@
           {
             "name": "keys",
             "secret": {
-              "secretName": "api-identity",
+              "secretName": {{ index .Values.secretRefs "api-identity" | toJson }},
               "defaultMode": 288,
               "items": [
                 {
