@@ -1,7 +1,6 @@
-import { defineConfig } from "vite";
-import { defineConfig as defineVitestConfig } from "vitest/config";
+import { defineConfig } from "vitest/config";
 
-export default defineVitestConfig({
+export default defineConfig({
   server: { port: 5173 },
   test: { environment: "node", include: ["src/**/*.test.ts"] },
 });
