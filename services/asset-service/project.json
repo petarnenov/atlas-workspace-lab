@@ -2,12 +2,36 @@
   "name": "asset-service",
   "root": "services/asset-service",
   "projectType": "application",
+  "implicitDependencies": [
+    "demo-support"
+  ],
   "targets": {
     "build": {
-      "command": "gradle :asset-service:build --no-daemon"
+      "command": "./gradlew :asset-service:assemble --no-daemon",
+      "inputs": [
+        "default",
+        "javaBuild",
+        "^default"
+      ],
+      "outputs": [
+        "{projectRoot}/build/libs"
+      ]
     },
     "test": {
-      "command": "gradle :asset-service:test --no-daemon"
+      "command": "./gradlew :asset-service:test --no-daemon",
+      "inputs": [
+        "default",
+        "javaBuild",
+        "^default"
+      ]
+    },
+    "coverage": {
+      "command": "node scripts/local/run.mjs ./gradlew :asset-service:test :asset-service:jacocoTestCoverageVerification -Pintegration --no-daemon",
+      "inputs": [
+        "default",
+        "javaBuild",
+        "^default"
+      ]
     }
   }
 }

@@ -2,12 +2,36 @@
   "name": "processing-worker",
   "root": "workers/processing-worker",
   "projectType": "application",
+  "implicitDependencies": [
+    "demo-support"
+  ],
   "targets": {
     "build": {
-      "command": "gradle :processing-worker:build --no-daemon"
+      "command": "./gradlew :processing-worker:assemble --no-daemon",
+      "inputs": [
+        "default",
+        "javaBuild",
+        "^default"
+      ],
+      "outputs": [
+        "{projectRoot}/build/libs"
+      ]
     },
     "test": {
-      "command": "gradle :processing-worker:test --no-daemon"
+      "command": "./gradlew :processing-worker:test --no-daemon",
+      "inputs": [
+        "default",
+        "javaBuild",
+        "^default"
+      ]
+    },
+    "coverage": {
+      "command": "node scripts/local/run.mjs ./gradlew :processing-worker:test :processing-worker:jacocoTestCoverageVerification -Pintegration --no-daemon",
+      "inputs": [
+        "default",
+        "javaBuild",
+        "^default"
+      ]
     }
   }
 }

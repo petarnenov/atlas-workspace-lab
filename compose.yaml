@@ -1,0 +1,91 @@
+name: atlas-lab
+services:
+  postgres:
+    image: atlas-lab-postgres
+    build: { context: ./infra/postgres }
+    environment:
+      POSTGRES_USER: local_admin
+      POSTGRES_PASSWORD: ${LAB_POSTGRES_ADMIN_PASSWORD:?run scripts/local/prepare.mjs}
+      ASSET_DB_PASSWORD: ${LAB_ASSET_DB_PASSWORD:?run prepare}
+      WORKER_DB_PASSWORD: ${LAB_WORKER_DB_PASSWORD:?run prepare}
+    ports: ["127.0.0.1:5432:5432"]
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./infra/postgres/init.sh:/docker-entrypoint-initdb.d/10-lab.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U local_admin -d postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  kafka:
+    image: atlas-lab-kafka
+    build: { context: ./infra/kafka }
+    ports: ["127.0.0.1:9092:9092"]
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: INTERNAL://:19092,EXTERNAL://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:19092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    volumes: ["kafka:/var/lib/kafka/data"]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:19092 --list >/dev/null",
+        ]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+  kafka-init:
+    image: atlas-lab-kafka
+    depends_on:
+      kafka: { condition: service_healthy }
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        for topic in asset.uploaded.v1 asset.processed.v1; do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --create --if-not-exists --topic "$$topic" --partitions 1 --replication-factor 1 --config retention.ms=604800000
+        done
+  storage:
+    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
+    environment:
+      RUSTFS_ACCESS_KEY: local_admin
+      RUSTFS_SECRET_KEY: ${LAB_OBJECT_ADMIN_PASSWORD:?run prepare}
+      RUSTFS_CONSOLE_ENABLE: "false"
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_VOLUMES: /data
+    ports: ["127.0.0.1:9000:9000"]
+    volumes: ["storage:/data"]
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -fsS http://localhost:9000/health/ready >/dev/null"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+  storage-init:
+    build:
+      context: ./infra/storage
+      dockerfile: Dockerfile.bootstrap
+    depends_on:
+      storage: { condition: service_healthy }
+    environment:
+      OBJECT_ADMIN_PASSWORD: ${LAB_OBJECT_ADMIN_PASSWORD}
+      ASSET_OBJECT_PASSWORD: ${LAB_ASSET_OBJECT_PASSWORD}
+      WORKER_OBJECT_PASSWORD: ${LAB_WORKER_OBJECT_PASSWORD}
+    volumes:
+      - ./infra/storage:/policies:ro
+      - ./infra/storage/bootstrap.sh:/bootstrap.sh:ro
+volumes:
+  postgres:
+  kafka:
+  storage:

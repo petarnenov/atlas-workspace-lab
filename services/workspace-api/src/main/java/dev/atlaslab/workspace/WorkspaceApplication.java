@@ -1,21 +1,20 @@
 package dev.atlaslab.workspace;
 
-import org.springframework.boot.SpringApplication;
+import dev.atlaslab.demo.*;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.context.annotation.*;
 
 @SpringBootApplication
+@Import(Errors.class)
 public class WorkspaceApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(WorkspaceApplication.class, args);
-    }
-}
+  public static void main(String[] args) {
+    SpringApplication.run(WorkspaceApplication.class, args);
+  }
 
-@RestController
-class WorkspaceHealthController {
-    @GetMapping("/health")
-    String health() {
-        return "workspace-api:ok";
-    }
+  @Bean
+  Identity identity(@Value("${lab.identity.public-key}") String key) {
+    return new Identity(key, "lab-fixture", "workspace-api", 300);
+  }
 }

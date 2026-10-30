@@ -5,13 +5,25 @@
   "projectType": "application",
   "targets": {
     "build": {
-      "command": "pnpm --filter @atlas/portal-ui build"
+      "command": "pnpm --filter @atlas/portal-ui build",
+      "inputs": [
+        "default",
+        "frontendBuild"
+      ]
     },
     "test": {
-      "command": "pnpm --filter @atlas/portal-ui test"
+      "command": "pnpm --filter @atlas/portal-ui test",
+      "inputs": [
+        "default",
+        "frontendBuild"
+      ]
     },
     "typecheck": {
-      "command": "pnpm --filter @atlas/portal-ui typecheck"
+      "command": "pnpm --filter @atlas/portal-ui typecheck",
+      "inputs": [
+        "default",
+        "frontendBuild"
+      ]
     }
   }
 }

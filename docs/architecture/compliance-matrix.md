@@ -1,6 +1,7 @@
 # Architecture Compliance Matrix — PoC
 
-**Status:** Work-in-progress design verification. No production compliance claim.
+**Status:** Local LAB-101 implementation verified; CI and human review tracked
+in [delivery evidence](../implementation/LAB-101-EVIDENCE.md). No production compliance claim.
 
 | ID | LAB-101 application | Evidence / review target |
 | --- | --- | --- |
@@ -11,7 +12,7 @@
 | P05 | Applicable | Explain each selected runtime dependency |
 | P06 | Applicable | Explicit demo security boundary; validate input |
 | P07 | Reduced local mode | No production identity claims; secrets never committed |
-| P08 | Design constraint | Tenant-aware policy before any multi-tenant demo |
+| P08 | Applicable | Verified signed tenant scope, tenant-safe reads, event checks, cross-tenant negative tests |
 | P09 | Design constraint | Synthetic data only; no real residency promise |
 | P10 | Applicable | Dependency checks and redaction policy |
 | P11 | Deferred | No RAG or cited generation |
