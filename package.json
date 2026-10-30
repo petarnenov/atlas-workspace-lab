@@ -9,10 +9,28 @@
     "affected:build": "nx affected -t build",
     "affected:test": "nx affected -t test",
     "check:architecture": "node scripts/check-architecture.mjs",
-    "check:all": "pnpm check:scaffold && pnpm check:architecture"
+    "check:all": "pnpm check:scaffold && pnpm check:architecture",
+    "check:contracts": "node scripts/check-contracts.mjs",
+    "local:prepare": "node scripts/local/prepare.mjs",
+    "local:up": "node scripts/local/up.mjs",
+    "test:java": "./gradlew test --no-daemon",
+    "test:integration": "node scripts/local/run.mjs ./gradlew build -Pintegration --no-daemon",
+    "test:frontend": "pnpm --filter @atlas/portal-ui exec vitest run --coverage",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "nx": "^22.0.0"
   },
-  "packageManager": "pnpm@10.0.0"
+  "packageManager": "pnpm@10.0.0",
+  "pnpm": {
+    "overrides": {
+      "axios": "1.20.0",
+      "brace-expansion@5.0.8": "5.0.11",
+      "follow-redirects": "1.16.1",
+      "smol-toml": "1.7.1"
+    }
+  }
 }

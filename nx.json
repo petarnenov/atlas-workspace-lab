@@ -7,8 +7,27 @@
     ],
     "sharedGlobals": [
       "{workspaceRoot}/nx.json",
-      "{workspaceRoot}/pnpm-workspace.yaml"
+      "{workspaceRoot}/pnpm-workspace.yaml",
+      "{workspaceRoot}/contracts/**/*"
+    ],
+    "javaBuild": [
+      "{workspaceRoot}/build.gradle.kts",
+      "{workspaceRoot}/settings.gradle.kts",
+      "{workspaceRoot}/gradle.properties",
+      "{workspaceRoot}/gradle/**/*",
+      "{workspaceRoot}/gradlew"
+    ],
+    "frontendBuild": [
+      "{workspaceRoot}/pnpm-lock.yaml",
+      "{workspaceRoot}/package.json"
     ]
   },
-  "targetDefaults": {}
+  "targetDefaults": {
+    "build": {
+      "cache": true,
+      "outputs": [
+        "{projectRoot}/dist"
+      ]
+    }
+  }
 }
