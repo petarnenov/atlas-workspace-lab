@@ -1,0 +1,95 @@
+# LAB-103 verification — 2026-10-30
+
+Approval: revision 1 approved in the task conversation; see approval.md.
+Runtime: dedicated kind v0.33.0, Kubernetes v1.35.8, digest-pinned node and
+kindnet image; scoped kubeconfig and namespace. Tool checksums and image digests
+are recorded in infra/k8s/versions.json. No application contracts changed.
+
+## Verified locally
+
+- All seven runtime components reached Ready; Kafka and storage bootstrap Jobs completed.
+- Real static-UI PDF upload reached COMPLETED through Kubernetes API/Kafka/worker/S3.
+- Identity denial, tenant denial, idempotent retry and malformed PDF failure passed.
+- Worker restart plus duplicate Kafka delivery retained one terminal checkpoint/version.
+- Authorized dependency connections succeeded; an unrelated pod was denied access
+  to PostgreSQL, Kafka and S3. Startup now also executes positive/negative proof Jobs.
+- Java probes: 3 unit tests; JaCoCo 25/27 source lines (92.59%) and 14/18 branches
+  (77.78%); 75% line/branch gates enforced by k8sProbeCheck.
+- Existing Java unit, frontend (21 tests), scaffold, architecture and contract
+  invariant checks passed. Frontend retains 100% lines / 95.4% branches.
+- Workload image scans: all eight images report zero HIGH/CRITICAL findings.
+  Repository secret/vulnerability scan passed. Kubernetes scanner verifies it
+  actually recognized manifest files; empty/unsupported scan output fails.
+- One observed node-container sample after deployment: 1.448 GiB memory usage.
+  Doctor conservatively requires 4 CPUs/6 GiB Docker RAM; this sample is not a
+  capacity, availability, backup or production-readiness claim.
+
+## Recovery and corrections verified during implementation
+
+The owner manually deleted the initial cluster. Setup recreated only the named
+local cluster with retained local synthetic credentials. Dedicated kubeconfig
+comparison canonicalizes equivalent config formatting and checks cluster identity.
+Worker uses Recreate because a single Kafka partition can leave a rolling-update
+replacement without an assignment while the old pod remains ready. No schema,
+security principal or HTTP/event boundary changed. UI/scripts have explicit image
+ownership/permissions so a restrictive host umask cannot break non-root execution.
+
+## Final local verification
+
+### Linux CI kubeconfig correction
+
+The first Kubernetes CI run failed after kind reached Ready. Reproduced with
+Node 24 and kubectl 1.35 on Linux: reopening Node spawnSync stdin through
+`--kubeconfig /dev/stdin` fails with `no such device or address` because stdin
+is a socket. A private temporary directory (0700) and kubeconfig file (0600)
+replace stdin only for canonicalization, with unconditional cleanup in finally.
+The same Linux reproduction succeeds using the file. Regression tests check
+permissions, suppressed output, and cleanup on success and command failure.
+Cluster identity checks and approved security/contract boundaries remain unchanged.
+
+- make k8s-test passed: Java probe coverage gates, three Node helper suites with
+  measured ≥75% lines/branches/functions gates, and all seven real Kubernetes
+  E2E scenarios (4.1 minutes).
+- Stateful pod recreation retained accepted receipts, outbox payloads and objects;
+  a new upload completed after dependency recreation.
+- Stop/up retained PVC UIDs and restored all workloads; prior receipt stayed COMPLETED.
+- Database-role cross-access was denied, and the read-only object identity could
+  stat the original retained object but could not write a new object.
+- Startup positive/negative connectivity proof Jobs passed before app deployment.
+- CI and human code review remain required before merge. No merge or archive
+  is authorized by spec approval alone.
+
+### Docker containerd image import correction
+
+The next CI run passed setup but failed importing images with `content digest
+... not found`. kind documents this Docker containerd image-store incompatibility:
+https://kind.sigs.k8s.io/docs/user/known-issues/#unable-to-kind-load-docker-images
+Build now exports only the Docker daemon's Linux architecture and loads that
+archive into the dedicated cluster, removing the archive even on failure.
+Stop queries existing workloads before scaling, so cleanup after a build failure
+also succeeds when no workloads have been created. No host Docker settings,
+cluster identity checks, contracts or security boundaries are changed.
+
+Single-platform export of a digest-only RustFS reference has no RepoTags and
+cannot preserve the original multi-platform index identity. Build now creates
+a local storage image from the same pinned upstream digest, adding only a
+runtime-identification label. Its distinct image ID and immutable tag avoid
+aliasing an existing imported multi-platform image in the CRI image cache.
+It is recorded alongside the other seven images and used for rollout and scanning.
+The storage manifest uses Never pull policy, like other locally loaded images.
+CI emits pod status and warning events on failure, without dumping environment
+variables or Secret resources.
+
+### Kafka client address recovery
+
+CI reached real E2E and passed the first four scenarios, but a new upload after
+broker recreation remained PROCESSING beyond the existing 80-second deadline.
+The same scenario passed locally; local Kafka client logs nevertheless showed
+connection attempts to the former broker Pod IP after recreation. The headless
+service exposes changing Pod addresses directly. Kafka now retains its headless
+governing/controller service while a dedicated internal kafka-client ClusterIP
+provides a stable advertised/bootstrap endpoint. Both select the same Kafka pods;
+existing ingress/egress policies and broker ports remain unchanged. No timeout,
+retry limit, HTTP/event contract, ownership or authorization boundary is relaxed.
+Recovery E2E additionally asserts the client Service IP remains stable across
+pod recreation; positive/negative network tests use that same client endpoint.

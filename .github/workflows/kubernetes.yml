@@ -1,0 +1,49 @@
+name: Local Kubernetes runtime
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  kind-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: make k8s-tools
+      - run: make k8s-setup
+      - run: make k8s-build
+      - run: make k8s-up
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: make k8s-test
+      - run: make install-trivy
+      - run: make k8s-security
+      - name: Show pod status after failure
+        if: failure()
+        run: |
+          node --input-type=module <<'JS'
+          import { kubectl } from './scripts/k8s/runtime.mjs';
+          kubectl(['get', 'pods', '-o', 'wide']);
+          kubectl(['get', 'events', '--field-selector=type=Warning', '-o', 'custom-columns=REASON:.reason,MESSAGE:.message']);
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kubernetes-verification
+          path: |
+            .local/k8s/images.json
+            .local/k8s/security/*.json
+      - name: Stop local workloads without deleting data
+        if: always()
+        run: make k8s-stop

@@ -1,0 +1,2644 @@
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "kind": "Namespace",
+      "metadata": {
+        "name": "atlas-lab",
+        "labels": {
+          "pod-security.kubernetes.io/enforce": "restricted",
+          "pod-security.kubernetes.io/enforce-version": "v1.35"
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "ConfigMap",
+      "metadata": {
+        "name": "storage-policies",
+        "namespace": "atlas-lab"
+      },
+      "data": {
+        "asset.json": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:PutObject\",\"s3:GetObject\",\"s3:DeleteObject\"],\"Resource\":[\"arn:aws:s3:::synthetic-assets/*\"]}]}\n",
+        "worker.json": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::synthetic-assets/*\"]}]}\n"
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "StatefulSet",
+      "metadata": {
+        "name": "postgres",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "serviceName": "postgres",
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "postgres"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "postgres"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "securityContext": {
+              "runAsNonRoot": true,
+              "runAsUser": 70,
+              "runAsGroup": 70,
+              "fsGroup": 70,
+              "seccompProfile": {
+                "type": "RuntimeDefault"
+              }
+            },
+            "initContainers": [],
+            "containers": [
+              {
+                "name": "postgres",
+                "image": "atlas/postgres:build",
+                "imagePullPolicy": "Never",
+                "ports": [
+                  {
+                    "containerPort": 5432
+                  }
+                ],
+                "env": [
+                  {
+                    "name": "POSTGRES_USER",
+                    "value": "local_admin"
+                  },
+                  {
+                    "name": "PGDATA",
+                    "value": "/var/lib/postgresql/data/pgdata"
+                  }
+                ],
+                "envFrom": [
+                  {
+                    "secretRef": {
+                      "name": "postgres-admin"
+                    }
+                  }
+                ],
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "128Mi"
+                  },
+                  "limits": {
+                    "cpu": "1000m",
+                    "memory": "512Mi"
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "tmp",
+                    "mountPath": "/tmp"
+                  },
+                  {
+                    "name": "data",
+                    "mountPath": "/var/lib/postgresql/data"
+                  },
+                  {
+                    "name": "socket",
+                    "mountPath": "/var/run/postgresql"
+                  }
+                ],
+                "readinessProbe": {
+                  "exec": {
+                    "command": [
+                      "pg_isready",
+                      "-U",
+                      "local_admin",
+                      "-d",
+                      "postgres"
+                    ]
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3
+                },
+                "startupProbe": {
+                  "exec": {
+                    "command": [
+                      "pg_isready",
+                      "-U",
+                      "local_admin",
+                      "-d",
+                      "postgres"
+                    ]
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3,
+                  "failureThreshold": 90
+                },
+                "livenessProbe": {
+                  "exec": {
+                    "command": [
+                      "pg_isready",
+                      "-U",
+                      "local_admin",
+                      "-d",
+                      "postgres"
+                    ]
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3,
+                  "failureThreshold": 12
+                }
+              }
+            ],
+            "volumes": [
+              {
+                "name": "tmp",
+                "emptyDir": {
+                  "sizeLimit": "128Mi"
+                }
+              },
+              {
+                "name": "socket",
+                "emptyDir": {}
+              }
+            ]
+          }
+        },
+        "volumeClaimTemplates": [
+          {
+            "metadata": {
+              "name": "data"
+            },
+            "spec": {
+              "accessModes": [
+                "ReadWriteOnce"
+              ],
+              "resources": {
+                "requests": {
+                  "storage": "2Gi"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "StatefulSet",
+      "metadata": {
+        "name": "kafka",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "serviceName": "kafka",
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "kafka"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "kafka"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "securityContext": {
+              "runAsNonRoot": true,
+              "runAsUser": 1000,
+              "runAsGroup": 1000,
+              "fsGroup": 1000,
+              "seccompProfile": {
+                "type": "RuntimeDefault"
+              }
+            },
+            "initContainers": [
+              {
+                "name": "config-seed",
+                "image": "atlas/kafka:build",
+                "imagePullPolicy": "Never",
+                "command": [
+                  "/bin/sh",
+                  "-ec",
+                  "cp -R /opt/kafka/config/. /config/"
+                ],
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "128Mi"
+                  },
+                  "limits": {
+                    "cpu": "1000m",
+                    "memory": "128Mi"
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "config",
+                    "mountPath": "/config"
+                  }
+                ]
+              }
+            ],
+            "containers": [
+              {
+                "name": "kafka",
+                "image": "atlas/kafka:build",
+                "imagePullPolicy": "Never",
+                "ports": [
+                  {
+                    "containerPort": 19092
+                  }
+                ],
+                "env": [
+                  {
+                    "name": "KAFKA_NODE_ID",
+                    "value": "1"
+                  },
+                  {
+                    "name": "KAFKA_PROCESS_ROLES",
+                    "value": "broker,controller"
+                  },
+                  {
+                    "name": "KAFKA_LISTENERS",
+                    "value": "INTERNAL://:19092,CONTROLLER://:9093"
+                  },
+                  {
+                    "name": "KAFKA_ADVERTISED_LISTENERS",
+                    "value": "INTERNAL://kafka-client:19092"
+                  },
+                  {
+                    "name": "KAFKA_LISTENER_SECURITY_PROTOCOL_MAP",
+                    "value": "INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+                  },
+                  {
+                    "name": "KAFKA_INTER_BROKER_LISTENER_NAME",
+                    "value": "INTERNAL"
+                  },
+                  {
+                    "name": "KAFKA_CONTROLLER_LISTENER_NAMES",
+                    "value": "CONTROLLER"
+                  },
+                  {
+                    "name": "KAFKA_CONTROLLER_QUORUM_VOTERS",
+                    "value": "1@kafka:9093"
+                  },
+                  {
+                    "name": "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR",
+                    "value": "1"
+                  },
+                  {
+                    "name": "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR",
+                    "value": "1"
+                  },
+                  {
+                    "name": "KAFKA_TRANSACTION_STATE_LOG_MIN_ISR",
+                    "value": "1"
+                  },
+                  {
+                    "name": "KAFKA_LOG_RETENTION_HOURS",
+                    "value": "168"
+                  },
+                  {
+                    "name": "KAFKA_LOG_DIRS",
+                    "value": "/var/lib/kafka/data"
+                  },
+                  {
+                    "name": "KAFKA_AUTO_CREATE_TOPICS_ENABLE",
+                    "value": "false"
+                  },
+                  {
+                    "name": "KAFKA_HEAP_OPTS",
+                    "value": "-Xms256m -Xmx512m"
+                  }
+                ],
+                "envFrom": [],
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "128Mi"
+                  },
+                  "limits": {
+                    "cpu": "1000m",
+                    "memory": "1024Mi"
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "tmp",
+                    "mountPath": "/tmp"
+                  },
+                  {
+                    "name": "data",
+                    "mountPath": "/var/lib/kafka/data"
+                  },
+                  {
+                    "name": "config",
+                    "mountPath": "/opt/kafka/config"
+                  },
+                  {
+                    "name": "logs",
+                    "mountPath": "/opt/kafka/logs"
+                  }
+                ],
+                "readinessProbe": {
+                  "exec": {
+                    "command": [
+                      "/opt/kafka/bin/kafka-topics.sh",
+                      "--bootstrap-server",
+                      "localhost:19092",
+                      "--list"
+                    ]
+                  },
+                  "periodSeconds": 15,
+                  "timeoutSeconds": 10
+                },
+                "startupProbe": {
+                  "exec": {
+                    "command": [
+                      "/opt/kafka/bin/kafka-topics.sh",
+                      "--bootstrap-server",
+                      "localhost:19092",
+                      "--list"
+                    ]
+                  },
+                  "periodSeconds": 15,
+                  "timeoutSeconds": 10,
+                  "failureThreshold": 90
+                },
+                "livenessProbe": {
+                  "exec": {
+                    "command": [
+                      "/opt/kafka/bin/kafka-topics.sh",
+                      "--bootstrap-server",
+                      "localhost:19092",
+                      "--list"
+                    ]
+                  },
+                  "periodSeconds": 15,
+                  "timeoutSeconds": 10,
+                  "failureThreshold": 12
+                }
+              }
+            ],
+            "volumes": [
+              {
+                "name": "tmp",
+                "emptyDir": {
+                  "sizeLimit": "128Mi"
+                }
+              },
+              {
+                "name": "config",
+                "emptyDir": {}
+              },
+              {
+                "name": "logs",
+                "emptyDir": {
+                  "sizeLimit": "128Mi"
+                }
+              }
+            ]
+          }
+        },
+        "volumeClaimTemplates": [
+          {
+            "metadata": {
+              "name": "data"
+            },
+            "spec": {
+              "accessModes": [
+                "ReadWriteOnce"
+              ],
+              "resources": {
+                "requests": {
+                  "storage": "2Gi"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "StatefulSet",
+      "metadata": {
+        "name": "storage",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "serviceName": "storage",
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "storage"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "storage"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "securityContext": {
+              "runAsNonRoot": true,
+              "runAsUser": 10001,
+              "runAsGroup": 10001,
+              "fsGroup": 10001,
+              "seccompProfile": {
+                "type": "RuntimeDefault"
+              }
+            },
+            "initContainers": [],
+            "containers": [
+              {
+                "name": "storage",
+                "image": "atlas/storage:build",
+                "imagePullPolicy": "Never",
+                "ports": [
+                  {
+                    "containerPort": 9000
+                  }
+                ],
+                "env": [
+                  {
+                    "name": "RUSTFS_ACCESS_KEY",
+                    "value": "local_admin"
+                  },
+                  {
+                    "name": "RUSTFS_CONSOLE_ENABLE",
+                    "value": "false"
+                  },
+                  {
+                    "name": "RUSTFS_ADDRESS",
+                    "value": ":9000"
+                  },
+                  {
+                    "name": "RUSTFS_VOLUMES",
+                    "value": "/data"
+                  }
+                ],
+                "envFrom": [
+                  {
+                    "secretRef": {
+                      "name": "storage-admin"
+                    }
+                  }
+                ],
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "128Mi"
+                  },
+                  "limits": {
+                    "cpu": "1000m",
+                    "memory": "512Mi"
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "tmp",
+                    "mountPath": "/tmp"
+                  },
+                  {
+                    "name": "data",
+                    "mountPath": "/data"
+                  },
+                  {
+                    "name": "logs",
+                    "mountPath": "/logs"
+                  }
+                ],
+                "readinessProbe": {
+                  "httpGet": {
+                    "path": "/health/ready",
+                    "port": 9000
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3,
+                  "failureThreshold": 6
+                },
+                "startupProbe": {
+                  "httpGet": {
+                    "path": "/health/ready",
+                    "port": 9000
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3,
+                  "failureThreshold": 90
+                },
+                "livenessProbe": {
+                  "httpGet": {
+                    "path": "/health/ready",
+                    "port": 9000
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3,
+                  "failureThreshold": 12
+                }
+              }
+            ],
+            "volumes": [
+              {
+                "name": "tmp",
+                "emptyDir": {
+                  "sizeLimit": "128Mi"
+                }
+              },
+              {
+                "name": "logs",
+                "emptyDir": {
+                  "sizeLimit": "128Mi"
+                }
+              }
+            ]
+          }
+        },
+        "volumeClaimTemplates": [
+          {
+            "metadata": {
+              "name": "data"
+            },
+            "spec": {
+              "accessModes": [
+                "ReadWriteOnce"
+              ],
+              "resources": {
+                "requests": {
+                  "storage": "2Gi"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "postgres",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "selector": {
+          "app": "postgres"
+        },
+        "ports": [
+          {
+            "name": "main",
+            "port": 5432,
+            "targetPort": 5432
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "kafka",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "selector": {
+          "app": "kafka"
+        },
+        "clusterIP": "None",
+        "publishNotReadyAddresses": true,
+        "ports": [
+          {
+            "name": "main",
+            "port": 19092,
+            "targetPort": 19092
+          },
+          {
+            "name": "controller",
+            "port": 9093,
+            "targetPort": 9093
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "storage",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "selector": {
+          "app": "storage"
+        },
+        "ports": [
+          {
+            "name": "main",
+            "port": 9000,
+            "targetPort": 9000
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "workspace-api",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "selector": {
+          "app": "workspace-api"
+        },
+        "ports": [
+          {
+            "name": "main",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "asset-service",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "selector": {
+          "app": "asset-service"
+        },
+        "ports": [
+          {
+            "name": "main",
+            "port": 8081,
+            "targetPort": 8081
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "portal-ui",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "selector": {
+          "app": "portal-ui"
+        },
+        "ports": [
+          {
+            "name": "main",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "kafka-client",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "selector": {
+          "app": "kafka"
+        },
+        "publishNotReadyAddresses": true,
+        "ports": [
+          {
+            "name": "broker",
+            "port": 19092,
+            "targetPort": 19092
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "batch/v1",
+      "kind": "Job",
+      "metadata": {
+        "name": "network-proof-allow",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "backoffLimit": 0,
+        "activeDeadlineSeconds": 60,
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "asset-service"
+            }
+          },
+          "spec": {
+            "restartPolicy": "Never",
+            "automountServiceAccountToken": false,
+            "securityContext": {
+              "runAsNonRoot": true,
+              "runAsUser": 10001,
+              "runAsGroup": 10001,
+              "fsGroup": 10001,
+              "seccompProfile": {
+                "type": "RuntimeDefault"
+              }
+            },
+            "containers": [
+              {
+                "name": "network-proof-allow",
+                "image": "atlas/asset-service:build",
+                "imagePullPolicy": "Never",
+                "command": [
+                  "java",
+                  "-Xmx32m",
+                  "-cp",
+                  "/app/probe",
+                  "NetworkCheck",
+                  "allow",
+                  "postgres:5432",
+                  "kafka-client:19092",
+                  "storage:9000"
+                ],
+                "envFrom": [],
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "128Mi"
+                  },
+                  "limits": {
+                    "cpu": "1000m",
+                    "memory": "256Mi"
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "tmp",
+                    "mountPath": "/tmp"
+                  }
+                ]
+              }
+            ],
+            "volumes": [
+              {
+                "name": "tmp",
+                "emptyDir": {
+                  "sizeLimit": "128Mi"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "batch/v1",
+      "kind": "Job",
+      "metadata": {
+        "name": "network-proof-deny",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "backoffLimit": 0,
+        "activeDeadlineSeconds": 60,
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "network-proof-deny"
+            }
+          },
+          "spec": {
+            "restartPolicy": "Never",
+            "automountServiceAccountToken": false,
+            "securityContext": {
+              "runAsNonRoot": true,
+              "runAsUser": 10001,
+              "runAsGroup": 10001,
+              "fsGroup": 10001,
+              "seccompProfile": {
+                "type": "RuntimeDefault"
+              }
+            },
+            "containers": [
+              {
+                "name": "network-proof-deny",
+                "image": "atlas/asset-service:build",
+                "imagePullPolicy": "Never",
+                "command": [
+                  "java",
+                  "-Xmx32m",
+                  "-cp",
+                  "/app/probe",
+                  "NetworkCheck",
+                  "deny",
+                  "postgres:5432",
+                  "kafka-client:19092",
+                  "storage:9000"
+                ],
+                "envFrom": [],
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "128Mi"
+                  },
+                  "limits": {
+                    "cpu": "1000m",
+                    "memory": "256Mi"
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "tmp",
+                    "mountPath": "/tmp"
+                  }
+                ]
+              }
+            ],
+            "volumes": [
+              {
+                "name": "tmp",
+                "emptyDir": {
+                  "sizeLimit": "128Mi"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "batch/v1",
+      "kind": "Job",
+      "metadata": {
+        "name": "kafka-init",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "backoffLimit": 2,
+        "activeDeadlineSeconds": 180,
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "kafka-init"
+            }
+          },
+          "spec": {
+            "restartPolicy": "Never",
+            "automountServiceAccountToken": false,
+            "securityContext": {
+              "runAsNonRoot": true,
+              "runAsUser": 10001,
+              "runAsGroup": 10001,
+              "fsGroup": 10001,
+              "seccompProfile": {
+                "type": "RuntimeDefault"
+              }
+            },
+            "containers": [
+              {
+                "name": "kafka-init",
+                "image": "atlas/kafka:build",
+                "imagePullPolicy": "Never",
+                "command": [
+                  "/bin/sh",
+                  "-ec",
+                  "for topic in asset.uploaded.v1 asset.processed.v1; do /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --create --if-not-exists --topic \"$topic\" --partitions 1 --replication-factor 1 --config retention.ms=604800000; done"
+                ],
+                "envFrom": [],
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "128Mi"
+                  },
+                  "limits": {
+                    "cpu": "1000m",
+                    "memory": "256Mi"
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "tmp",
+                    "mountPath": "/tmp"
+                  }
+                ]
+              }
+            ],
+            "volumes": [
+              {
+                "name": "tmp",
+                "emptyDir": {
+                  "sizeLimit": "128Mi"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "batch/v1",
+      "kind": "Job",
+      "metadata": {
+        "name": "storage-init",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "backoffLimit": 2,
+        "activeDeadlineSeconds": 180,
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "storage-init"
+            }
+          },
+          "spec": {
+            "restartPolicy": "Never",
+            "automountServiceAccountToken": false,
+            "securityContext": {
+              "runAsNonRoot": true,
+              "runAsUser": 10001,
+              "runAsGroup": 10001,
+              "fsGroup": 10001,
+              "seccompProfile": {
+                "type": "RuntimeDefault"
+              }
+            },
+            "containers": [
+              {
+                "name": "storage-init",
+                "image": "atlas/storage-init:build",
+                "imagePullPolicy": "Never",
+                "command": [
+                  "/bin/sh",
+                  "/bootstrap.sh"
+                ],
+                "envFrom": [
+                  {
+                    "secretRef": {
+                      "name": "storage-bootstrap"
+                    }
+                  }
+                ],
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "128Mi"
+                  },
+                  "limits": {
+                    "cpu": "1000m",
+                    "memory": "256Mi"
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "tmp",
+                    "mountPath": "/tmp"
+                  },
+                  {
+                    "name": "policies",
+                    "mountPath": "/policies",
+                    "readOnly": true
+                  }
+                ]
+              }
+            ],
+            "volumes": [
+              {
+                "name": "tmp",
+                "emptyDir": {
+                  "sizeLimit": "128Mi"
+                }
+              },
+              {
+                "name": "policies",
+                "configMap": {
+                  "name": "storage-policies"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "name": "workspace-api",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "workspace-api"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "workspace-api"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "securityContext": {
+              "runAsNonRoot": true,
+              "runAsUser": 10001,
+              "runAsGroup": 10001,
+              "fsGroup": 10001,
+              "seccompProfile": {
+                "type": "RuntimeDefault"
+              }
+            },
+            "terminationGracePeriodSeconds": 30,
+            "containers": [
+              {
+                "name": "workspace-api",
+                "image": "atlas/workspace-api:build",
+                "imagePullPolicy": "Never",
+                "env": [
+                  {
+                    "name": "SERVER_ADDRESS",
+                    "value": "0.0.0.0"
+                  },
+                  {
+                    "name": "LAB_ASSET_URL",
+                    "value": "http://asset-service:8081"
+                  },
+                  {
+                    "name": "LAB_FIXTURE_PUBLIC_KEY",
+                    "value": "/keys/fixture-public.pem"
+                  },
+                  {
+                    "name": "LAB_SERVICE_PRIVATE_KEY",
+                    "value": "/keys/service-private.pem"
+                  }
+                ],
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "128Mi"
+                  },
+                  "limits": {
+                    "cpu": "1000m",
+                    "memory": "512Mi"
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "tmp",
+                    "mountPath": "/tmp"
+                  },
+                  {
+                    "name": "keys",
+                    "mountPath": "/keys",
+                    "readOnly": true
+                  }
+                ],
+                "ports": [
+                  {
+                    "containerPort": 8080
+                  }
+                ],
+                "readinessProbe": {
+                  "tcpSocket": {
+                    "port": 8080
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 2,
+                  "failureThreshold": 6
+                },
+                "startupProbe": {
+                  "tcpSocket": {
+                    "port": 8080
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 2,
+                  "failureThreshold": 60
+                },
+                "livenessProbe": {
+                  "tcpSocket": {
+                    "port": 8080
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 2,
+                  "failureThreshold": 12
+                }
+              }
+            ],
+            "volumes": [
+              {
+                "name": "tmp",
+                "emptyDir": {
+                  "sizeLimit": "128Mi"
+                }
+              },
+              {
+                "name": "keys",
+                "secret": {
+                  "secretName": "api-identity",
+                  "defaultMode": 288,
+                  "items": [
+                    {
+                      "key": "fixture-public.pem",
+                      "path": "fixture-public.pem"
+                    },
+                    {
+                      "key": "service-private.pem",
+                      "path": "service-private.pem"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "name": "asset-service",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "asset-service"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "asset-service"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "securityContext": {
+              "runAsNonRoot": true,
+              "runAsUser": 10001,
+              "runAsGroup": 10001,
+              "fsGroup": 10001,
+              "seccompProfile": {
+                "type": "RuntimeDefault"
+              }
+            },
+            "terminationGracePeriodSeconds": 30,
+            "containers": [
+              {
+                "name": "asset-service",
+                "image": "atlas/asset-service:build",
+                "imagePullPolicy": "Never",
+                "env": [
+                  {
+                    "name": "SERVER_ADDRESS",
+                    "value": "0.0.0.0"
+                  },
+                  {
+                    "name": "ASSET_DB_URL",
+                    "value": "jdbc:postgresql://postgres:5432/assets"
+                  },
+                  {
+                    "name": "KAFKA_BOOTSTRAP",
+                    "value": "kafka-client:19092"
+                  },
+                  {
+                    "name": "LAB_OBJECT_ENDPOINT",
+                    "value": "http://storage:9000"
+                  },
+                  {
+                    "name": "LAB_SERVICE_PUBLIC_KEY",
+                    "value": "/keys/service-public.pem"
+                  },
+                  {
+                    "name": "LAB_ASSET_DB_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "asset-runtime",
+                        "key": "LAB_ASSET_DB_PASSWORD"
+                      }
+                    }
+                  },
+                  {
+                    "name": "LAB_ASSET_OBJECT_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "asset-runtime",
+                        "key": "LAB_ASSET_OBJECT_PASSWORD"
+                      }
+                    }
+                  }
+                ],
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "128Mi"
+                  },
+                  "limits": {
+                    "cpu": "1000m",
+                    "memory": "512Mi"
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "tmp",
+                    "mountPath": "/tmp"
+                  },
+                  {
+                    "name": "keys",
+                    "mountPath": "/keys",
+                    "readOnly": true
+                  }
+                ],
+                "ports": [
+                  {
+                    "containerPort": 8081
+                  }
+                ],
+                "readinessProbe": {
+                  "tcpSocket": {
+                    "port": 8081
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 2,
+                  "failureThreshold": 6
+                },
+                "startupProbe": {
+                  "tcpSocket": {
+                    "port": 8081
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 2,
+                  "failureThreshold": 60
+                },
+                "livenessProbe": {
+                  "tcpSocket": {
+                    "port": 8081
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 2,
+                  "failureThreshold": 12
+                }
+              }
+            ],
+            "volumes": [
+              {
+                "name": "tmp",
+                "emptyDir": {
+                  "sizeLimit": "128Mi"
+                }
+              },
+              {
+                "name": "keys",
+                "secret": {
+                  "secretName": "asset-runtime",
+                  "defaultMode": 288,
+                  "items": [
+                    {
+                      "key": "service-public.pem",
+                      "path": "service-public.pem"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "name": "processing-worker",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "replicas": 1,
+        "strategy": {
+          "type": "Recreate"
+        },
+        "selector": {
+          "matchLabels": {
+            "app": "processing-worker"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "processing-worker"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "securityContext": {
+              "runAsNonRoot": true,
+              "runAsUser": 10001,
+              "runAsGroup": 10001,
+              "fsGroup": 10001,
+              "seccompProfile": {
+                "type": "RuntimeDefault"
+              }
+            },
+            "terminationGracePeriodSeconds": 30,
+            "containers": [
+              {
+                "name": "processing-worker",
+                "image": "atlas/processing-worker:build",
+                "imagePullPolicy": "Never",
+                "env": [
+                  {
+                    "name": "WORKER_DB_URL",
+                    "value": "jdbc:postgresql://postgres:5432/worker_checkpoint"
+                  },
+                  {
+                    "name": "KAFKA_BOOTSTRAP",
+                    "value": "kafka-client:19092"
+                  },
+                  {
+                    "name": "LAB_OBJECT_ENDPOINT",
+                    "value": "http://storage:9000"
+                  },
+                  {
+                    "name": "LAB_SERVICE_PUBLIC_KEY",
+                    "value": "/keys/service-public.pem"
+                  },
+                  {
+                    "name": "LAB_PARSER_JAR",
+                    "value": "/app/parser.jar"
+                  },
+                  {
+                    "name": "LAB_WORKER_DB_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "worker-runtime",
+                        "key": "LAB_WORKER_DB_PASSWORD"
+                      }
+                    }
+                  },
+                  {
+                    "name": "LAB_WORKER_OBJECT_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "worker-runtime",
+                        "key": "LAB_WORKER_OBJECT_PASSWORD"
+                      }
+                    }
+                  },
+                  {
+                    "name": "POD_NAME",
+                    "valueFrom": {
+                      "fieldRef": {
+                        "fieldPath": "metadata.name"
+                      }
+                    }
+                  },
+                  {
+                    "name": "SPRING_KAFKA_CONSUMER_CLIENT_ID",
+                    "value": "$(POD_NAME)"
+                  }
+                ],
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "128Mi"
+                  },
+                  "limits": {
+                    "cpu": "1000m",
+                    "memory": "640Mi"
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "tmp",
+                    "mountPath": "/tmp"
+                  },
+                  {
+                    "name": "keys",
+                    "mountPath": "/keys",
+                    "readOnly": true
+                  }
+                ],
+                "readinessProbe": {
+                  "exec": {
+                    "command": [
+                      "java",
+                      "-Xmx48m",
+                      "-XX:MaxMetaspaceSize=64m",
+                      "-cp",
+                      "/app/probe:/app/extracted/lib/*",
+                      "WorkerReady"
+                    ]
+                  },
+                  "periodSeconds": 15,
+                  "timeoutSeconds": 10,
+                  "failureThreshold": 4
+                },
+                "startupProbe": {
+                  "exec": {
+                    "command": [
+                      "/bin/sh",
+                      "-c",
+                      "test -r /app/parser.jar"
+                    ]
+                  },
+                  "failureThreshold": 30,
+                  "periodSeconds": 5
+                }
+              }
+            ],
+            "volumes": [
+              {
+                "name": "tmp",
+                "emptyDir": {
+                  "sizeLimit": "128Mi"
+                }
+              },
+              {
+                "name": "keys",
+                "secret": {
+                  "secretName": "worker-runtime",
+                  "defaultMode": 288,
+                  "items": [
+                    {
+                      "key": "service-public.pem",
+                      "path": "service-public.pem"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "name": "portal-ui",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "portal-ui"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "portal-ui"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "securityContext": {
+              "runAsNonRoot": true,
+              "runAsUser": 101,
+              "runAsGroup": 101,
+              "fsGroup": 101,
+              "seccompProfile": {
+                "type": "RuntimeDefault"
+              }
+            },
+            "terminationGracePeriodSeconds": 30,
+            "containers": [
+              {
+                "name": "portal-ui",
+                "image": "atlas/portal-ui:build",
+                "imagePullPolicy": "Never",
+                "env": [],
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "resources": {
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "128Mi"
+                  },
+                  "limits": {
+                    "cpu": "1000m",
+                    "memory": "512Mi"
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "tmp",
+                    "mountPath": "/tmp"
+                  }
+                ],
+                "ports": [
+                  {
+                    "containerPort": 8080
+                  }
+                ],
+                "readinessProbe": {
+                  "httpGet": {
+                    "path": "/",
+                    "port": 8080
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3,
+                  "failureThreshold": 6
+                },
+                "startupProbe": {
+                  "tcpSocket": {
+                    "port": 8080
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 2,
+                  "failureThreshold": 60
+                },
+                "livenessProbe": {
+                  "tcpSocket": {
+                    "port": 8080
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 2,
+                  "failureThreshold": 12
+                }
+              }
+            ],
+            "volumes": [
+              {
+                "name": "tmp",
+                "emptyDir": {
+                  "sizeLimit": "128Mi"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "default-deny",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {},
+        "policyTypes": [
+          "Ingress",
+          "Egress"
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "dns",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {},
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "namespaceSelector": {
+                  "matchLabels": {
+                    "kubernetes.io/metadata.name": "kube-system"
+                  }
+                },
+                "podSelector": {
+                  "matchLabels": {
+                    "k8s-app": "kube-dns"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "UDP",
+                "port": 53
+              },
+              {
+                "protocol": "TCP",
+                "port": 53
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "ui-api-in",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "workspace-api"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "portal-ui"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 8080
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "ui-api-out",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "portal-ui"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "workspace-api"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 8080
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "api-assets-in",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "asset-service"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "workspace-api"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 8081
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "api-assets-out",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "workspace-api"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "asset-service"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 8081
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "asset-service-postgres-in",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "postgres"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "asset-service"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 5432
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "asset-service-postgres-out",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "asset-service"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "postgres"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 5432
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "asset-service-kafka-in",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "kafka"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "asset-service"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 19092
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "asset-service-kafka-out",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "asset-service"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "kafka"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 19092
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "asset-service-storage-in",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "storage"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "asset-service"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 9000
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "asset-service-storage-out",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "asset-service"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "storage"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 9000
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "processing-worker-postgres-in",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "postgres"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "processing-worker"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 5432
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "processing-worker-postgres-out",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "processing-worker"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "postgres"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 5432
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "processing-worker-kafka-in",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "kafka"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "processing-worker"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 19092
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "processing-worker-kafka-out",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "processing-worker"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "kafka"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 19092
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "processing-worker-storage-in",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "storage"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "processing-worker"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 9000
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "processing-worker-storage-out",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "processing-worker"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "storage"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 9000
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "kafka-bootstrap-in",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "kafka"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "kafka-init"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 19092
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "kafka-bootstrap-out",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "kafka-init"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "kafka"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 19092
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "storage-bootstrap-in",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "storage"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "storage-init"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 9000
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "storage-bootstrap-out",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "storage-init"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "storage"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 9000
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "kafka-internal-in",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "kafka"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "kafka"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 9093
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "kafka-internal-out",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "kafka"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "kafka"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 9093
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "kafka-broker-in",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "kafka"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "kafka"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 19092
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "kafka-broker-out",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "kafka"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "kafka"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 19092
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

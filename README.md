@@ -109,3 +109,37 @@ Integration and E2E require running dependencies; E2E requires built Java artifa
 Stop `make dev` before running tests. Security scans require `make install-trivy`
 and built dependency images (`make up`). Make serializes its targets even with `-j`;
 do not launch independent test commands concurrently.
+
+## Run the complete stack in Kubernetes
+
+LAB-103 adds a separate **local-only** kind deployment. Host builds use JDK 21,
+Node 24 and pnpm 10; all runtime components run in pods, including the static UI,
+workspace API, asset service, worker, PostgreSQL, Kafka and RustFS. Docker needs
+at least 4 CPUs and 6 GiB RAM. `kubectl` must be within one minor of Kubernetes
+1.35; exact kind/node/base-image pins are in `infra/k8s/versions.json`.
+
+```sh
+make setup             # existing host dependencies and Chromium
+make k8s-tools         # explicit checksum-verified local kind installation
+make k8s-doctor
+make k8s-dev            # setup, immutable image build/load, up, loopback forwarding
+```
+
+In another terminal, `make k8s-token` generates the synthetic fixture token for
+http://127.0.0.1:5173 (`TENANT=b` selects the second synthetic tenant). Do not run
+the Compose UI or test harness on port 5173 at the same time.
+
+`make k8s-setup`, `make k8s-build` and `make k8s-up` can also run separately.
+`make k8s-forward` opens an existing deployment. `make k8s-status` and
+`make k8s-logs` inspect it. `make k8s-stop` scales workloads to zero while retaining
+PVCs and secrets. Ctrl+C stops forwarding and leaves pods/data in place.
+`make k8s-test` verifies helpers and runs real cluster E2E/failure scenarios;
+stop manual forwarding before running tests. `make k8s-security` scans rendered
+manifests and every workload image after `make install-trivy`.
+
+Credentials live separately under ignored `.local/k8s/` and are never silently
+rotated. A dedicated kubeconfig and explicit `kind-atlas-lab` context protect
+unrelated clusters. Do not delete or regenerate credentials against existing
+PVCs. Kubernetes Secrets are not an encryption-at-rest guarantee. This is a
+single-node synthetic-data demonstration, with no HA, backup or production claim.
+See [Kubernetes operations](docs/implementation/LAB-103-RUNBOOK.md).

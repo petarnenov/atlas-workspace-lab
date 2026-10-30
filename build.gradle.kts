@@ -72,3 +72,38 @@ project(":processing-worker") {
     tasks.named("assemble") { dependsOn("parserJar") }
 }
 project(":processing-worker") { tasks.named("test") { dependsOn("parserJar") } }
+
+// Local Kubernetes exec probes are separately tested/instrumented; never included in domain JARs.
+project(":processing-worker") {
+    val sets = extensions.getByType<SourceSetContainer>()
+    val probes = sets.create("k8sProbe") {
+        java.srcDir(rootProject.file("infra/k8s/images"))
+        compileClasspath += sets["main"].compileClasspath
+        runtimeClasspath += sets["main"].runtimeClasspath
+    }
+    val probeTests = sets.create("k8sProbeTest") {
+        java.srcDir(rootProject.file("infra/k8s/tests"))
+        compileClasspath += probes.output + sets["test"].compileClasspath
+        runtimeClasspath += probes.output + sets["test"].runtimeClasspath
+    }
+    val probeTest = tasks.register<Test>("k8sProbeTest") {
+        testClassesDirs = probeTests.output.classesDirs
+        classpath = probeTests.runtimeClasspath
+        useJUnitPlatform()
+    }
+    val probeReport = tasks.register<JacocoReport>("k8sProbeCoverage") {
+        dependsOn(probeTest)
+        executionData(layout.buildDirectory.file("jacoco/k8sProbeTest.exec"))
+        sourceSets(probes)
+        reports { xml.required.set(true); html.required.set(true) }
+    }
+    tasks.register<JacocoCoverageVerification>("k8sProbeCheck") {
+        dependsOn(probeReport)
+        executionData(layout.buildDirectory.file("jacoco/k8sProbeTest.exec"))
+        sourceSets(probes)
+        violationRules {
+            rule { limit { counter = "LINE"; minimum = "0.75".toBigDecimal() } }
+            rule { limit { counter = "BRANCH"; minimum = "0.75".toBigDecimal() } }
+        }
+    }
+}

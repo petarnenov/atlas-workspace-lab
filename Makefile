@@ -68,3 +68,33 @@ install-trivy: ## Install checksum-verified local Trivy
 	node scripts/local/install-trivy.mjs
 security: ## Scan repository and images (requires install-trivy and up)
 	node scripts/security.mjs
+
+.PHONY: k8s-tools k8s-doctor k8s-setup k8s-build k8s-up k8s-dev k8s-forward k8s-status k8s-logs k8s-stop k8s-token k8s-test k8s-security
+k8s-tools: ## Install checksum-verified kind/kubectl under .local/tools (explicit opt-in)
+	node scripts/k8s/install-kind.mjs
+k8s-doctor: ## Validate Kubernetes host prerequisites and dedicated context
+	node scripts/k8s/runtime.mjs doctor
+k8s-setup: ## Create isolated local kind cluster and scoped credentials
+	node scripts/k8s/runtime.mjs setup
+k8s-build: ## Build immutable application/dependency images and load kind
+	node scripts/k8s/runtime.mjs build
+k8s-up: ## Reconcile Kubernetes workloads with bounded readiness waits
+	node scripts/k8s/runtime.mjs up
+k8s-dev: ## Setup/build/start complete Kubernetes demo and forward UI
+	node scripts/k8s/runtime.mjs dev
+k8s-forward: ## Forward Kubernetes UI to loopback port 5173
+	node scripts/k8s/runtime.mjs forward
+k8s-status: ## Inspect dedicated Kubernetes workload status
+	node scripts/k8s/runtime.mjs status
+k8s-logs: ## Show recent Kubernetes application logs
+	node scripts/k8s/runtime.mjs logs
+k8s-stop: ## Scale local Kubernetes workloads to zero, retaining PVCs
+	node scripts/k8s/runtime.mjs stop
+k8s-token: ## Generate Kubernetes synthetic token (TENANT=a or b)
+	@node scripts/k8s/runtime.mjs token
+k8s-test: ## Run Kubernetes tooling checks and real cluster E2E/failure tests
+	./gradlew :processing-worker:k8sProbeCheck --no-daemon
+	node --test --experimental-test-coverage --test-coverage-include='scripts/k8s/*.mjs' --test-coverage-exclude='scripts/k8s/*.test.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/k8s/runtime.test.mjs
+	pnpm exec playwright test --config playwright.k8s.config.ts
+k8s-security: ## Scan Kubernetes manifests and all loaded workload images
+	node scripts/k8s/security.mjs
