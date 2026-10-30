@@ -375,9 +375,9 @@ for (const env of ["dev", "prod"] as const)
       const revisions = () =>
         Object.fromEntries(
           ["dev", "prod"].flatMap((e) =>
-            JSON.parse(
-              helmRuntime.helm(e, ["list", "-o", "json"]),
-            ).map((r: any) => [e + "/" + r.name, r.revision]),
+            JSON.parse(helmRuntime.helm(e, ["list", "-o", "json"])).map(
+              (r: any) => [e + "/" + r.name, r.revision],
+            ),
           ),
         );
       const before = revisions();

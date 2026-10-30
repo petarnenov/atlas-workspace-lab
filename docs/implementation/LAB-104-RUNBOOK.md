@@ -80,9 +80,8 @@ against retained PVCs. Secrets do not imply encryption at rest.
 ```sh
 make helm-build ENV=prod
 make helm-deploy ENV=prod SERVICE=workspace-api
-# Inspect revision numbers in Helm history:
-.local/tools/helm --kubeconfig .local/k8s/kubeconfig --kube-context kind-atlas-lab \
-  --namespace atlas-prod history atlas-workspace-api
+# Inspect revision numbers in the selected application's history:
+make helm-status ENV=prod SERVICE=workspace-api
 make helm-rollback ENV=prod SERVICE=workspace-api REVISION=1
 ```
 

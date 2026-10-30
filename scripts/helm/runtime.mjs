@@ -528,6 +528,8 @@ export async function main(
   else if (action === "status") {
     console.log(`${env} synthetic demo (${namespace(env)})`);
     helm(env, ["list"], { quiet: false });
+    if (service)
+      helm(env, ["history", release(component(service))], { quiet: false });
     kube(env, ["get", "pods,services,pvc,jobs"]);
   } else if (action === "logs")
     kube(env, [

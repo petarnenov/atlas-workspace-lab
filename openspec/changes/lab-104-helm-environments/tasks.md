@@ -11,11 +11,11 @@
       stop/up, owned forwards, status/logs and explicit compatible app rollback.
 - [x] Add meaningful helper tests and >=75% measured coverage; validate both chart
       profiles, wrong-context/configuration/ownership/initialization failure paths.
-- [ ] Prove both environments and exact replica counts in kind E2E, including
+- [x] Prove both environments and exact replica counts in kind E2E, including
       upload/auth/tenancy, cross-environment network denial, restart/duplicate/
       persistence recovery, independent upgrade and app rollback.
-- [ ] Run affected native/Compose/contracts/security gates and scan both profiles.
-- [ ] Document Make operations, resource measurements and prod demo limitations;
+- [x] Run affected native/Compose/contracts/security gates and scan both profiles.
+- [x] Document Make operations, resource measurements and prod demo limitations;
       update architecture compliance and capture sanitized verification evidence.
-- [ ] Submit PR with LAB-104, exact specification approval, versions and evidence.
+- [x] Submit PR with LAB-104, exact specification approval, versions and evidence.
 - [ ] Require green CI and human review before merge; do not archive automatically.
