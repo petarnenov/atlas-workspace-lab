@@ -29,7 +29,7 @@ identity boundaries, recovery, retention and operational limitations.
 
 | Check | Result |
 | --- | --- |
-| Gradle build with `-Pintegration`, independent runnable JARs | PASS; 27 Java tests, zero skipped/failures |
+| Gradle build with `-Pintegration`, independent runnable JARs | PASS; 28 Java tests, zero skipped/failures |
 | Java unit tests without Docker-dependent integration tags | PASS; separate CI job |
 | React TypeScript/Vite build | PASS |
 | Vitest frontend | PASS; 21 tests in four files |

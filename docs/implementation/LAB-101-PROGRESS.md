@@ -15,7 +15,7 @@ authoritative tenant-safe status, fenced worker checkpoints and bounded parser,
 BFF, React upload/status UI, locked dependencies and coverage/security/CI gates.
 Wire contracts are unchanged.
 
-Verified locally: 27 Java tests with real PostgreSQL/RustFS integration,
+Verified locally: 28 Java tests with real PostgreSQL/RustFS integration,
 21 frontend tests, seven real-service E2E tests including restart/recreation,
 provider/consumer contracts, source coverage above 75% in every module,
 affected-build boundaries/timings, zero HIGH/CRITICAL scanner findings and zero

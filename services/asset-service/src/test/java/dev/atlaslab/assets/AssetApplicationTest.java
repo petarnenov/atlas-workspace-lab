@@ -110,6 +110,23 @@ class AssetApplicationTest {
   }
 
   @Test
+  void metadataFailureAfterObjectWriteRollsBackAndCompensates() {
+    db.execute(
+        "ALTER TABLE asset ADD CONSTRAINT synthetic_commit_failure CHECK (status <> 'PENDING')");
+    try {
+      assertEquals(503, assertThrows(HttpFailure.class, () -> upload("commit-failure")).status);
+      var calls = inOrder(store);
+      calls.verify(store).put(anyString(), eq(pdf));
+      calls.verify(store).delete(anyString());
+      assertEquals(0, db.queryForObject("SELECT count(*) FROM asset", Integer.class));
+      assertEquals(0, db.queryForObject("SELECT count(*) FROM upload_outbox", Integer.class));
+      assertEquals(0, db.queryForObject("SELECT count(*) FROM upload_intent", Integer.class));
+    } finally {
+      db.execute("ALTER TABLE asset DROP CONSTRAINT synthetic_commit_failure");
+    }
+  }
+
+  @Test
   void compensationFailureRetainsRecoverableIntent() throws Exception {
     doThrow(new RuntimeException()).when(store).put(anyString(), any());
     doThrow(new RuntimeException()).when(store).delete(anyString());
