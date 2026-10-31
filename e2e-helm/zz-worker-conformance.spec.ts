@@ -36,8 +36,9 @@ test('replacement worker harness preserves staged fencing, retries and neutral r
  try {
   kube(['scale','deployment/processing-worker','--replicas=0'],{quiet:true});
   kube(['wait','--for=delete','pod','-l','app=processing-worker','--timeout=90s'],{quiet:true});
+  const api=await connect('workspace-api',8080);
   const pdf=syntheticPdf(),key=randomUUID();
-  const upload=()=>request.post('/api/v1/assets',{headers:{...publicHeaders,'Idempotency-Key':key},multipart:{file:{name:'synthetic.pdf',mimeType:'application/pdf',buffer:pdf}}});
+  const upload=()=>request.post(`${api}/api/v1/assets`,{headers:{...publicHeaders,'Idempotency-Key':key},multipart:{file:{name:'synthetic.pdf',mimeType:'application/pdf',buffer:pdf}}});
   const accepted=await upload();expect(accepted.status()).toBe(202);const receipt=await accepted.json();
   expect((await (await upload()).json()).assetId).toBe(receipt.assetId);
   // Independent consumer group: never move the real worker's committed offsets.
@@ -65,16 +66,16 @@ test('replacement worker harness preserves staged fencing, retries and neutral r
   // Simulate acknowledgement loss: retry byte-identical stage, not a new parse/key.
   const retry=await stage(winner,stageKey);expect(retry.status()).toBe(200);expect(await retry.json()).toEqual(staged);
   expect((await stage({...winner,document:{schemaVersion:'1',markdown:'conflict'}},stageKey)).status()).toBe(409);
-  expect((await request.get(`/api/v2/assets/${receipt.assetId}/parsed`,{headers:publicHeaders})).status()).toBe(404);
+  expect((await request.get(`${api}/api/v2/assets/${receipt.assetId}/parsed`,{headers:publicHeaders})).status()).toBe(404);
   expect(ledger.finish(staleFence,JSON.stringify({artifactId:(await stale.json()).artifactId}))).toBe(false);
   const outcome=JSON.stringify({eventId:randomUUID(),assetId:receipt.assetId,tenantId:tenant,schemaVersion:'2',occurredAt:new Date().toISOString(),correlationId:input.correlationId,outcome:'COMPLETED',inputEventId:input.eventId,artifactId:staged.artifactId});
   expect(ledger.finish(fence,outcome)).toBe(true);expect(ledger.finish(fence,outcome)).toBe(false);
   const publish=()=>kube(['exec','-i','statefulset/kafka','--','/opt/kafka/bin/kafka-console-producer.sh','--bootstrap-server','kafka-client:19092','--topic','asset.processed.v2'],{input:ledger.outcome+'\n',quiet:true,sensitive:true});
   publish();publish();
-  await expect.poll(async()=>{const response=await request.get(`/api/v1/assets/${receipt.assetId}`,{headers:publicHeaders});return (await response.json()).status;},{timeout:30000}).toBe('COMPLETED');
-  const detail=await (await request.get(`/api/v1/assets/${receipt.assetId}`,{headers:publicHeaders})).json();expect(detail.version).toBe(2);
-  const copy=await request.get(`/api/v2/assets/${receipt.assetId}/parsed?format=json`,{headers:publicHeaders});expect(copy.status()).toBe(200);expect(await copy.json()).toEqual(result.document);
-  expect((await request.get(`/api/v2/assets/${receipt.assetId}/parsed`,{headers:{Authorization:`Bearer ${native.token('b',directory)}`}})).status()).toBe(404);
+  await expect.poll(async()=>{const response=await request.get(`${api}/api/v1/assets/${receipt.assetId}`,{headers:publicHeaders});return (await response.json()).status;},{timeout:30000}).toBe('COMPLETED');
+  const detail=await (await request.get(`${api}/api/v1/assets/${receipt.assetId}`,{headers:publicHeaders})).json();expect(detail.version).toBe(2);
+  const copy=await request.get(`${api}/api/v2/assets/${receipt.assetId}/parsed?format=json`,{headers:publicHeaders});expect(copy.status()).toBe(200);expect(await copy.json()).toEqual(result.document);
+  expect((await request.get(`${api}/api/v2/assets/${receipt.assetId}/parsed`,{headers:{Authorization:`Bearer ${native.token('b',directory)}`}})).status()).toBe(404);
   for(const name of ['asset-service','workspace-api','docling-parser']) {
    const original=before.find((d:any)=>d.metadata.name===name),current=deployments().find((d:any)=>d.metadata.name===name);
    expect(current.spec.template).toEqual(original.spec.template);expect(current.metadata.generation).toBe(original.metadata.generation);
