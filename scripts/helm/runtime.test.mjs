@@ -42,6 +42,7 @@ if(name==='kind'){
   else if(state[target])console.log(JSON.stringify(state[target].namespace));
  }
  else if(s.includes('get secrets')){
+  if(!args.includes('--ignore-not-found')||!args.includes('artifact-owner'))process.exit(31);
   let items=state[ns]?.secrets||[];
   if(mode==='secrets-mismatch')items=[];
   console.log(JSON.stringify({items}));

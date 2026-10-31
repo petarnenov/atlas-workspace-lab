@@ -273,8 +273,12 @@ else if(name==='javac')console.log('javac 21.0.1');else if(name==='pnpm')console
     assert.equal(existsSync(failedConfig), false);
     const objects = r.secretObjects(r.localCredentials());
     let writes = 0;
+    r.reconcileSecrets([],()=>assert.fail("Empty ownership must never list namespace Secrets"));
     r.reconcileSecrets(objects, (args) => {
-      if (args[0] === "get") return JSON.stringify({ items: objects });
+      if (args[0] === "get") {
+        assert.deepEqual(args,["get","secrets",...objects.map(item=>item.metadata.name),"--ignore-not-found","-o","json"]);
+        return JSON.stringify({ items: objects });
+      }
       writes++;
     });
     assert.equal(writes, 0);

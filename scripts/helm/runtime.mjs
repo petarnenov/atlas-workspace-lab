@@ -192,7 +192,7 @@ export function secrets(env, create = false) {
 export function assertCredentials(env) {
   const expected = secrets(env);
   const existing = JSON.parse(
-    kube(env, ["get", "secrets", "-o", "json"], {
+    kube(env, ["get", "secrets", ...expected.map(item=>item.metadata.name), "--ignore-not-found", "-o", "json"], {
       quiet: true,
       sensitive: true,
     }),

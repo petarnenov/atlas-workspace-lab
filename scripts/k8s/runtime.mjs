@@ -344,8 +344,9 @@ export function secretObjects(
   }));
 }
 export function reconcileSecrets(objects, kube = kubectl) {
+  if(objects.length===0)return;
   const existing = JSON.parse(
-    kube(["get", "secrets", "-o", "json"], { quiet: true, sensitive: true }),
+    kube(["get", "secrets", ...objects.map(item=>item.metadata.name), "--ignore-not-found", "-o", "json"], { quiet: true, sensitive: true }),
   ).items;
   for (const secret of objects) {
     const old = existing.find((s) => s.metadata.name === secret.metadata.name);
