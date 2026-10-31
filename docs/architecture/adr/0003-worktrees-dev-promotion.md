@@ -1,7 +1,7 @@
 # ADR-0003 — Worktrees, dev integration and promotion-only hosted CI
 
-Status: PROPOSED — revision 1, LAB-108. Owner requested this policy on 2026-10-31;
-exact revision approval and workflow implementation remain pending.
+Status: ACCEPTED — revision 1, LAB-108, approved commit `6bcb255` on
+2026-10-31; see LAB-108 approval.md. Implementation evidence is tracked separately.
 Applies P02/P05/P15/P18–P20. Owner: repository owner.
 
 ## Context and decision
@@ -62,5 +62,5 @@ Preserve workflow check names where practical and verify required checks are
 actually reported. No automatic merge or branch-protection relaxation.
 
 Rollback is a separately reviewed restoration of the previous trigger policy;
-never disable quality checks as a rollback. Exact revision approval evidence will
-be recorded in LAB-108 before implementation.
+never disable quality checks as a rollback. Exact revision approval evidence is
+recorded in LAB-108 approval.md.

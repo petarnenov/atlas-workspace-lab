@@ -1,0 +1,207 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Atlas neutral parsed document API",
+    "version": "2.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local demo only"
+    }
+  ],
+  "paths": {
+    "/api/v2/assets/{assetId}/parsed": {
+      "get": {
+        "operationId": "readParsedDocumentPublicV2",
+        "security": [
+          {
+            "demoIdentity": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "markdown",
+                "json"
+              ],
+              "default": "markdown"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed tenant-scoped artifact",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "text/markdown": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "schemaVersion": {
+                      "type": "string",
+                      "const": "1"
+                    },
+                    "markdown": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 10485760
+                    }
+                  },
+                  "required": [
+                    "schemaVersion",
+                    "markdown"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Access denied or unavailable artifact"
+          },
+          "401": {
+            "description": "Access denied or unavailable artifact"
+          },
+          "403": {
+            "description": "Access denied or unavailable artifact"
+          },
+          "404": {
+            "description": "Access denied or unavailable artifact"
+          },
+          "503": {
+            "description": "Unavailable or corrupt content"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "demoIdentity": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "SyntheticPoCIdentity",
+        "description": "Synthetic signed test token, never production identity; server-side validation required. No client-chosen tenant headers."
+      }
+    },
+    "schemas": {
+      "AssetStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "PROCESSING",
+          "COMPLETED",
+          "FAILED"
+        ]
+      },
+      "AssetReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assetId",
+          "status",
+          "correlationId"
+        ],
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssetStatus"
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "AssetDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assetId",
+          "status",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssetStatus"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errorCode": {
+            "type": "string",
+            "enum": [
+              "INVALID_DOCUMENT",
+              "PROCESSING_ERROR",
+              "RETRY_EXHAUSTED"
+            ]
+          }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "message",
+          "correlationId"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      }
+    }
+  }
+}

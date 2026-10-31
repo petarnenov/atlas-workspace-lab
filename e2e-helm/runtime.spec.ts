@@ -11,7 +11,9 @@ import {
 import { writeFileSync } from "node:fs";
 
 test.describe.configure({ mode: "serial" });
-for (const env of ["dev", "prod"] as const)
+const devOnly=process.env.ATLAS_HELM_TEST_ENV==='dev';
+const environments: readonly ('dev'|'prod')[]=devOnly?['dev']:['dev','prod'];
+for (const env of environments)
   test.describe(`${env} Helm demo`, () => {
     test.use({ baseURL: `http://127.0.0.1:${env === "dev" ? 5173 : 5174}` });
     const kubectl = (args: string[], options?: any) =>
@@ -70,6 +72,7 @@ for (const env of ["dev", "prod"] as const)
             : name === "docling-parser" ? 3 : 1,
         );
       }
+      if(!devOnly) {
       const other = env === "dev" ? "prod" : "dev";
       const response = await request.post("/api/v1/assets", {
         headers: {
@@ -79,6 +82,7 @@ for (const env of ["dev", "prod"] as const)
         multipart: { file: file() },
       });
       expect(response.status()).toBe(401);
+      }
       const pods = JSON.parse(
         kubectl(["get", "pods", "-l", "app=workspace-api", "-o", "json"], {
           quiet: true,
@@ -377,7 +381,7 @@ for (const env of ["dev", "prod"] as const)
       test.setTimeout(240_000);
       const revisions = () =>
         Object.fromEntries(
-          ["dev", "prod"].flatMap((e) =>
+          environments.flatMap((e) =>
             JSON.parse(helmRuntime.helm(e, ["list", "-o", "json"])).map(
               (r: any) => [e + "/" + r.name, r.revision],
             ),
@@ -604,6 +608,7 @@ for (const env of ["dev", "prod"] as const)
   });
 
 test("authorized app labels cannot cross environment database, broker or object boundaries", async () => {
+  test.skip(devOnly,'Cross-profile isolation runs at dev-to-main release validation');
   for (const env of ["dev", "prod"] as const) {
     const other = env === "dev" ? "prod" : "dev";
     const targets = [

@@ -21,6 +21,11 @@ Read **[docs/architecture/principles.md](docs/architecture/principles.md)** befo
 - This PoC is not a clone of any company system.
 
 ## Required SDD flow
+Follow accepted ADR-0003: use dedicated task worktrees, integrate reviewed work
+into `dev`, develop only in dev mode, and run applicable checks locally through
+Make. Hosted workflows are reserved for same-repository `dev` to `main` promotion
+PRs before merge. Never bypass protections or merge without human review.
+
 Read the architecture decision register in `docs/architecture/adr/README.md`
 before proposing a design. Follow accepted ADRs; proposed ADRs need exact owner
 approval, never silently report them as accepted. LAB-107 revision 1 records the

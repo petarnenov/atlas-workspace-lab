@@ -3,7 +3,7 @@
 - [x] Link synthetic LAB-108; inspect accepted ADRs and full debt inventory.
 - [x] Prepare full scope, neutral contracts, asset ownership, migration and failure design.
 - [x] Record requested worktree/dev/promotion-only CI policy in proposed ADR-0003.
-- [ ] Obtain exact revision 1 approval, record commit/owner/date and ADR status.
+- [x] Obtain exact revision 1 approval, record commit/owner/date and ADR status.
 - [ ] Review/integrate LAB-107 governance into dev; preserve pending debt visibility.
 - [ ] Encode and validate reviewed OpenAPI/AsyncAPI shapes before runtime changes.
 - [ ] Add source/trigger tests and local Make CI-equivalent entrypoint; update all

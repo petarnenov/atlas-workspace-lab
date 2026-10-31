@@ -1,5 +1,14 @@
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
+.PHONY: ci ci-policy-test contracts-validate helm-test-dev helm-security-dev
+ci: ## Run applicable CI checks locally in dev mode; fail fast and record evidence
+	node scripts/ci/local.mjs
+ci-policy-test: ## Verify hosted workflows accept only dev-to-main promotion
+	node --test scripts/ci/promotion.test.mjs scripts/ci/contracts.test.mjs
+	node --test --experimental-test-coverage --test-coverage-include='scripts/ci/local.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/ci/local.test.mjs
+contracts-validate: ## Validate all OpenAPI/AsyncAPI versions with authoritative validators
+	pnpm exec node scripts/validate-asyncapi.mjs
+	npx --yes @redocly/cli@2.72.1 lint contracts/openapi/*.json --extends=spec
 TENANT ?= a
 export TENANT
 .PHONY: help doctor setup prepare up stop status apps dev ui token build build-ui test test-tools test-java test-frontend test-integration test-e2e check check-scaffold check-architecture check-contracts graph affected-build affected-test measure-builds install-trivy security
@@ -150,8 +159,13 @@ helm-rollback: ## Roll back one compatible app release (SERVICE=... REVISION=...
 helm-test: ## Run Helm helper coverage, chart checks and real two-environment E2E
 	node --test --experimental-test-coverage --test-coverage-include='scripts/helm/*.mjs' --test-coverage-exclude='scripts/helm/*.test.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/helm/runtime.test.mjs
 	pnpm exec playwright test --config playwright.helm.config.ts
+helm-test-dev: ## Run local Helm helper and dev-only runtime tests
+	node --test --experimental-test-coverage --test-coverage-include='scripts/helm/*.mjs' --test-coverage-exclude='scripts/helm/*.test.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/helm/runtime.test.mjs
+	ATLAS_HELM_TEST_ENV=dev pnpm exec playwright test --config playwright.helm.config.ts
 helm-security: ## Scan charts, rendered profiles and their deployed images
 	node scripts/helm/security.mjs
+helm-security-dev: ## Scan only the local dev profile, images and repository
+	ATLAS_HELM_TEST_ENV=dev node scripts/helm/security.mjs
 
 FORMAT ?= markdown
 export ASSET_ID FORMAT

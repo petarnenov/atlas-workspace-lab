@@ -1,6 +1,6 @@
 # LAB-108 — Full runtime refactoring and dev-first delivery
 
-Revision 1. Status: PROPOSED, awaiting exact owner approval. Synthetic story
+Revision 1. Status: APPROVED at commit `6bcb255`; see approval.md. Synthetic story
 LAB-108: make the existing demo conform to ADR-0001/0002 and the requested
 worktree/dev/promotion policy in proposed ADR-0003.
 

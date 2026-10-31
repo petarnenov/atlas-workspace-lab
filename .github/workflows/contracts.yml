@@ -2,14 +2,30 @@ name: LAB-101 contract validation
 
 on:
   pull_request:
-  push:
     branches: [main]
 
 permissions:
   contents: read
 
 jobs:
+  promotion-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require same-repository dev to main promotion
+        env:
+          PROMOTION_HEAD: ${{ github.event.pull_request.head.ref }}
+          PROMOTION_BASE: ${{ github.event.pull_request.base.ref }}
+          PROMOTION_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          node --input-type=module <<'JS'
+          if (process.env.GITHUB_EVENT_NAME !== 'pull_request' ||
+              process.env.PROMOTION_HEAD !== 'dev' ||
+              process.env.PROMOTION_BASE !== 'main' ||
+              process.env.PROMOTION_REPOSITORY !== process.env.GITHUB_REPOSITORY)
+            throw Error('Only same-repository dev to main promotion is allowed');
+          JS
   contract-standards:
+    needs: promotion-source
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,7 +37,7 @@ jobs:
       - name: Parse source contracts and assert critical invariants
         run: node scripts/check-contracts.mjs
       - name: Validate OpenAPI 3.1 schema
-        run: npx --yes @redocly/cli@2.72.1 lint contracts/openapi/*.v1.json --extends=spec
+        run: make contracts-validate
       - name: Validate AsyncAPI 3 schema
         run: node scripts/validate-asyncapi.mjs
       - name: Verify invalid event contracts are rejected

@@ -3,13 +3,15 @@ import { render, images, applications, namespace } from "./runtime.mjs";
 import { execute } from "../k8s/runtime.mjs";
 import { pathToFileURL } from "node:url";
 export function runSecurity() {
+  const selected=process.env.ATLAS_HELM_TEST_ENV;
+  if(selected&&selected!=='dev')throw Error('Local Helm security selection must be dev');
   const output = ".local/helm/security";
   mkdirSync(output, { recursive: true });
   rmSync(`${output}/manifests`, { recursive: true, force: true });
   mkdirSync(`${output}/manifests`, { recursive: true });
   const scanned = new Set();
   const args = ["--quiet", "--severity", "HIGH,CRITICAL", "--exit-code", "1"];
-  for (const env of ["dev", "prod"]) {
+  for (const env of selected?['dev']:["dev", "prod"]) {
     for (const service of ["platform", ...applications])
       for (const item of render(env, service))
         writeFileSync(
@@ -72,7 +74,7 @@ export function runSecurity() {
     ".",
   ]);
   console.log(
-    "Helm charts, both rendered demo profiles, images and repository security checks passed.",
+    `Helm charts, ${selected?'dev':'both demo'} rendered profiles, images and repository security checks passed.`,
   );
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
