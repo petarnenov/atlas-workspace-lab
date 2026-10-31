@@ -1,0 +1,325 @@
+{
+  "story": "LAB-108",
+  "recordedAt": "2026-10-31T11:36:58.637167+00:00",
+  "runtimeCandidate": "0623970160f52a2678e5aecd03b27e1116ce3e31",
+  "singleFinalAggregateRunComplete": false,
+  "strategy": "Preserve the original aggregate result; rerun affected checks after fixes. Unaffected Java, frontend, contracts and native runtime inputs retain their recorded evidence. No single final all-green make ci run is claimed.",
+  "aggregateRun": {
+    "commit": "0659f5042450218196a60af85935b0f980e256d4",
+    "dirty": false,
+    "environment": "dev",
+    "startedAt": "2026-10-31T10:21:47.468Z",
+    "checks": [
+      {
+        "command": [
+          "make",
+          "setup",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "check",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "architecture-test",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "ci-policy-test",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "contracts-validate",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "test-tools",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "test-java",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "build-ui",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "build-boundaries",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "test-frontend",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "parser-test",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "up",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "test-integration",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "test-e2e",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "install-trivy",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "security",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "stop",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "k8s-tools",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "k8s-setup",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "k8s-build",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "k8s-up",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "k8s-test",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "k8s-security",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "k8s-stop",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "helm-tools",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "helm-setup",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "helm-build",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "helm-lint",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "helm-up",
+          "ENV=dev"
+        ],
+        "passed": true
+      },
+      {
+        "command": [
+          "make",
+          "helm-test-dev",
+          "ENV=dev"
+        ],
+        "passed": false
+      }
+    ],
+    "complete": false
+  },
+  "affectedReruns": [
+    {
+      "commit": "30e165a",
+      "command": "make helm-test-dev ENV=dev",
+      "passed": false,
+      "result": "11 standard runtime scenarios and worker conformance passed; parser conformance exposed oversized unscoped Secret lookup after Helm history grew."
+    },
+    {
+      "commit": "1dd4ab8",
+      "command": "native and Helm helper coverage checks",
+      "passed": true,
+      "result": "3 native and 2 Helm tests; regressions require exact owned Secret names. Native 96.86% lines/94.23% branches; Helm 95.34%/90.63%."
+    },
+    {
+      "commit": "1dd4ab8",
+      "command": "make k8s-setup helm-setup ENV=dev",
+      "passed": true,
+      "result": "Repeated setup on the real retained cluster with existing Helm history; credentials preserved."
+    },
+    {
+      "commit": "1dd4ab8",
+      "command": "dev Helm parser and worker conformance files",
+      "passed": true,
+      "result": "2 passed in 7.6 minutes, including actual backup restoration, repeated migration, native-less rollback refusal and independent API forwards."
+    },
+    {
+      "commit": "0623970160f52a2678e5aecd03b27e1116ce3e31",
+      "command": "make parser-test",
+      "passed": true,
+      "result": "21 offline tests passed, 92.45% coverage, including startup-selected converter through unchanged HTTP handler."
+    },
+    {
+      "commit": "0623970160f52a2678e5aecd03b27e1116ce3e31",
+      "command": "make check architecture-test",
+      "passed": true,
+      "result": "Zero strict findings; 7 guardrail tests, 98.55% lines/97.24% branches."
+    },
+    {
+      "commit": "0623970160f52a2678e5aecd03b27e1116ce3e31",
+      "command": "make helm-build helm-deploy SERVICE=docling-parser ENV=dev",
+      "passed": true,
+      "result": "Only parser image changed; three replicas ready; other image inventory entries unchanged."
+    },
+    {
+      "commit": "0623970160f52a2678e5aecd03b27e1116ce3e31",
+      "command": "dev Helm upload/read/independent parser release smoke selection",
+      "passed": true,
+      "result": "3 passed: original worker upload, v1/v2 reads through API/Make, tenant denial, independent parser redeploy."
+    },
+    {
+      "commit": "0623970160f52a2678e5aecd03b27e1116ce3e31",
+      "command": "dev Helm replacement worker conformance",
+      "passed": true,
+      "result": "1 passed against final parser image and unchanged asset/BFF images."
+    }
+  ],
+  "finalDocumentationChecks": {
+    "runtimeCommit": "0623970160f52a2678e5aecd03b27e1116ce3e31",
+    "commands": [
+      "make check",
+      "make helm-security-dev ENV=dev"
+    ],
+    "passed": true,
+    "result": "Final evidence-only documentation working tree passed static checks and refreshed dev image/rendered-manifest/repository security checks."
+  },
+  "remaining": [
+    "Independent human review and integration into dev",
+    "Required hosted checks and human review on later same-repository dev-to-main promotion"
+  ]
+}

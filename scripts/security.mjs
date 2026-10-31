@@ -8,7 +8,7 @@ const images = [
       ...readFileSync("compose.yaml", "utf8").matchAll(/^    image: (\S+)$/gm),
     ].map((match) => match[1]),
   ),
-  "atlas-lab-storage-init",
+  `${process.env.ATLAS_COMPOSE_PROJECT??"atlas-lab"}-storage-init`,
 ];
 const commands = [
   [

@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 
 @Tag("integration")
 class StorageTest {
+  private static final String ENDPOINT=System.getenv().getOrDefault("LAB_OBJECT_ENDPOINT","http://localhost:9000");
   @Test
   void scopedIdentitiesCannotListOrReadAnotherBucket() {
     for (String user : List.of("asset_store", "worker_reader")) {
@@ -24,7 +25,7 @@ class StorageTest {
                   : "LAB_WORKER_OBJECT_PASSWORD");
       try (var client =
           S3Client.builder()
-              .endpointOverride(URI.create("http://localhost:9000"))
+              .endpointOverride(URI.create(ENDPOINT))
               .region(Region.US_EAST_1)
               .credentialsProvider(
                   StaticCredentialsProvider.create(AwsBasicCredentials.create(user, password)))
@@ -55,12 +56,12 @@ class StorageTest {
     byte[] bytes = "%PDF-1.7 synthetic-storage-test".getBytes();
     try (var asset =
             new ObjectsStore(
-                "http://localhost:9000",
+                ENDPOINT,
                 "asset_store",
                 System.getenv("LAB_ASSET_OBJECT_PASSWORD"));
         var worker =
             new ObjectsStore(
-                "http://localhost:9000",
+                ENDPOINT,
                 "worker_reader",
                 System.getenv("LAB_WORKER_OBJECT_PASSWORD"))) {
       asset.put(key, bytes);
@@ -73,7 +74,7 @@ class StorageTest {
           HttpClient.newHttpClient()
               .send(
                   HttpRequest.newBuilder(
-                          URI.create("http://localhost:9000/synthetic-assets/" + key))
+                          URI.create(ENDPOINT+"/synthetic-assets/" + key))
                       .GET()
                       .build(),
                   HttpResponse.BodyHandlers.ofString());

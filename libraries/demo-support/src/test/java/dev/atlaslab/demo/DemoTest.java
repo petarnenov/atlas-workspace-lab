@@ -106,34 +106,34 @@ class DemoTest {
     PdfUpload.validate("../evil.PDF", "application/pdf", good);
     assertEquals(64, PdfUpload.digest(good).length());
     assertEquals(
-        400,
+        dev.atlaslab.demo.domain.Rejection.Kind.EMPTY_DOCUMENT,
         assertThrows(
-                HttpFailure.class,
+                dev.atlaslab.demo.domain.Rejection.class,
                 () -> PdfUpload.validate("a.pdf", "application/pdf", new byte[0]))
-            .status);
+            .kind());
     assertEquals(
-        413,
+        dev.atlaslab.demo.domain.Rejection.Kind.TOO_LARGE,
         assertThrows(
-                HttpFailure.class,
+                dev.atlaslab.demo.domain.Rejection.class,
                 () ->
                     PdfUpload.validate(
                         "a.pdf", "application/pdf", new byte[ObjectsStore.MAX_BYTES + 1]))
-            .status);
+            .kind());
     for (String name : Arrays.asList(null, "x.txt"))
       assertEquals(
-          415,
-          assertThrows(HttpFailure.class, () -> PdfUpload.validate(name, "application/pdf", good))
-              .status);
+          dev.atlaslab.demo.domain.Rejection.Kind.UNSUPPORTED_TYPE,
+          assertThrows(dev.atlaslab.demo.domain.Rejection.class, () -> PdfUpload.validate(name, "application/pdf", good))
+              .kind());
     assertEquals(
-        415,
-        assertThrows(HttpFailure.class, () -> PdfUpload.validate("a.pdf", "text/plain", good))
-            .status);
+        dev.atlaslab.demo.domain.Rejection.Kind.UNSUPPORTED_TYPE,
+        assertThrows(dev.atlaslab.demo.domain.Rejection.class, () -> PdfUpload.validate("a.pdf", "text/plain", good))
+            .kind());
     assertEquals(
-        400,
+        dev.atlaslab.demo.domain.Rejection.Kind.INVALID_DOCUMENT,
         assertThrows(
-                HttpFailure.class,
+                dev.atlaslab.demo.domain.Rejection.class,
                 () -> PdfUpload.validate("a.pdf", "application/pdf", "not a pdf".getBytes()))
-            .status);
+            .kind());
   }
 
   @Test

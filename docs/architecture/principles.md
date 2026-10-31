@@ -80,6 +80,17 @@ Where appropriate, treat small/fast classification and scoring models as first-c
 
 ## Enforcement matrix
 
+### Architecture decisions and substitution evidence
+
+Read the [ADR register](adr/README.md) with these principles. Owner-approved LAB-107
+ADRs make hexagonal/microkernel boundaries and minimal reusable contracts explicit.
+See the register and LAB-107 approval evidence.
+P01 does not by itself define a microkernel architecture. Independent releases
+do not establish dependency inversion or provider/storage replaceability.
+Feature reviews must show ports/types, dependency direction, ownership, bindings,
+substitution tests and cross-store consistency. Coverage and green CI prove only
+the properties actually tested; architectural compliance requires explicit evidence.
+
 | Control | Where enforced | Timing |
 | --- | --- | --- |
 | OpenSpec approval and issue traceability | `openspec/changes/**`, PR template, reviewer | Before feature implementation |

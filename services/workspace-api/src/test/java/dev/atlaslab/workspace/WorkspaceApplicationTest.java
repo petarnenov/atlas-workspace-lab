@@ -66,8 +66,8 @@ class WorkspaceApplicationTest {
         new WorkspaceHttp(
             new Identity(
                 temp.resolve("fixture-public.pem").toString(), "lab-fixture", "workspace-api", 300),
-            temp.resolve("service-private.pem").toString(),
-            "http://127.0.0.1:" + server.getAddress().getPort());
+            new dev.atlaslab.workspace.application.WorkspaceCases(new dev.atlaslab.workspace.adapters.out.HttpAssetGateway(
+              temp.resolve("service-private.pem").toString(),"http://127.0.0.1:"+server.getAddress().getPort(),"http://127.0.0.1:1",false,true)));
   }
 
   String pem(String type, byte[] bytes) {

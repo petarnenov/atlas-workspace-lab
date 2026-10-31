@@ -1,4 +1,6 @@
 import {parserCredentials} from "./parser-credentials.mjs";
+import {localArtifacts} from './artifact-credentials.mjs';
+localArtifacts();
 parserCredentials();
 import { spawnSync } from "node:child_process";
 for (const args of [

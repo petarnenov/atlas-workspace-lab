@@ -9,6 +9,7 @@ import {
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import * as native from "../k8s/runtime.mjs";
+import {workerIdentity} from '../local/artifact-credentials.mjs';
 export const applications = [
   "portal-ui",
   "workspace-api",
@@ -35,7 +36,7 @@ export function component(value) {
     throw Error("SERVICE must name a supported application");
   return value;
 }
-export const directory = (env) => `.local/helm/${environment(env)}`;
+export const directory = (env) => `${native.runtimeRoot}/helm/${environment(env)}`;
 export const namespace = (env) => `atlas-${environment(env)}`;
 export const release = (service) =>
   service === "platform" ? "atlas-platform" : `atlas-${component(service)}`;
@@ -99,7 +100,10 @@ export function values(
   const profile = JSON.parse(
     readFileSync(`infra/helm/${chart}/values-${env}.yaml`),
   );
-  return { ...profile, component: service, stopped, images: inventory };
+  const mode=process.env.ATLAS_ARTIFACT_MODE??'portable';
+  if(!['legacy','portable'].includes(mode))throw Error('ATLAS_ARTIFACT_MODE must be legacy or portable');
+  return { ...profile, component: service, stopped, images: inventory,
+    ...(service==='platform'?{}:{artifactsEnabled:mode==='portable'}) };
 }
 export function parseManifests(text) {
   return text
@@ -188,7 +192,7 @@ export function secrets(env, create = false) {
 export function assertCredentials(env) {
   const expected = secrets(env);
   const existing = JSON.parse(
-    kube(env, ["get", "secrets", "-o", "json"], {
+    kube(env, ["get", "secrets", ...expected.map(item=>item.metadata.name), "--ignore-not-found", "-o", "json"], {
       quiet: true,
       sensitive: true,
     }),
@@ -246,6 +250,7 @@ export function setup(env) {
       }),
     });
   }
+  workerIdentity(directory(env),true);
   native.reconcileSecrets(secrets(env), (args, options) =>
     kube(env, args, options),
   );
@@ -256,9 +261,8 @@ export function build(env, service = process.env.SERVICE) {
   assertCredentials(env);
   if (service) {
     component(service);
-    if (service !== "docling-parser") throw Error("Independent build currently supports SERVICE=docling-parser; omit SERVICE for all images");
     const inventory = images(env);
-    inventory[service] = native.buildParser();
+    inventory[service] = native.buildComponent(service);
     writeFileSync(directory(env)+"/images.json",JSON.stringify(inventory,null,2)+"\n",{mode:0o600});
     return;
   }
@@ -475,6 +479,12 @@ export function stopForward(
   )
     kill(pid, "SIGTERM");
 }
+export function uiPort(env) {
+  environment(env);
+  const port=Number(process.env.ATLAS_UI_PORT ?? (env==='dev'?5173:5174));
+  if(!Number.isInteger(port)||port<1024||port>65535)throw Error('Invalid loopback UI port');
+  return port;
+}
 export function forward(env) {
   environment(env);
   assertNamespace(env);
@@ -490,7 +500,7 @@ export function forward(env) {
       "port-forward",
       "--address=127.0.0.1",
       "service/portal-ui",
-      `${env === "dev" ? 5173 : 5174}:8080`,
+      `${uiPort(env)}:8080`,
     ],
     { stdio: "inherit" },
   );

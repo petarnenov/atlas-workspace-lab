@@ -9,6 +9,13 @@ import org.springframework.context.annotation.*;
 @SpringBootApplication
 @Import(Errors.class)
 public class WorkspaceApplication {
+  @Bean
+  dev.atlaslab.workspace.application.WorkspaceCases workspaceCases(@Value("${lab.identity.private-key}") String key,
+      @Value("${lab.asset.url}") String assets,@Value("${lab.worker.url:http://localhost:8082}") String worker,
+      @Value("${lab.artifacts.enabled:false}") boolean portable,@Value("${lab.artifacts.legacy-read:true}") boolean legacy) {
+    return new dev.atlaslab.workspace.application.WorkspaceCases(new dev.atlaslab.workspace.adapters.out.HttpAssetGateway(key,assets,worker,portable,legacy));
+  }
+
   public static void main(String[] args) {
     SpringApplication.run(WorkspaceApplication.class, args);
   }

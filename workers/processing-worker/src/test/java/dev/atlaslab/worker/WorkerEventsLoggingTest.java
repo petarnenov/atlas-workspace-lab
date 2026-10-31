@@ -39,13 +39,16 @@ class WorkerEventsLoggingTest {
 
   @BeforeEach
   @SuppressWarnings("unchecked")
-  void setup() {
+  void setup() throws Exception {
     db = mock(JdbcTemplate.class);
     checkpoints = spy(new Checkpoints(db, mock(PlatformTransactionManager.class)));
     objects = mock(ObjectsStore.class);
     sandbox = mock(Sandbox.class);
     kafka = mock(KafkaTemplate.class);
-    worker = new WorkerEvents(checkpoints, objects, sandbox, mock(ParserClient.class), kafka);
+    when(objects.get(anyString())).thenReturn(new byte[]{1});
+    var defaultParser=mock(ParserClient.class);
+    when(defaultParser.parse(any())).thenAnswer(invocation -> new dev.atlaslab.worker.domain.WorkModel.Parsed(dev.atlaslab.demo.PdfUpload.digest(invocation.getArgument(0)),"fixture-converter","fixture-pipeline",1,"Synthetic","{}"));
+    worker = dev.atlaslab.worker.bootstrap.WorkerAssembly.create(checkpoints, objects, sandbox, defaultParser, kafka);
     logger = (Logger) LoggerFactory.getLogger(WorkerEvents.class);
     previousLevel = logger.getLevel();
     previousAdditive = logger.isAdditive();
@@ -75,7 +78,7 @@ class WorkerEventsLoggingTest {
   }
 
   Map<String, Object> lease(int attempt) {
-    Map<String, Object> result = Map.of("input_payload", Wire.json(input), "attempts", attempt);
+    Map<String, Object> result = Map.of("input_payload", Wire.json(input), "attempts", attempt,"event_id",input.eventId(),"fence",1L);
     doReturn(result).when(checkpoints).claim();
     return result;
   }
@@ -100,7 +103,7 @@ class WorkerEventsLoggingTest {
   void receiptContainsNoUnvalidatedPayloadAndIdlePollIsSilent() {
     doNothing().when(checkpoints).accept(anyString());
     worker.receive(SENSITIVE);
-    verify(checkpoints).accept(SENSITIVE);
+    verify(checkpoints).recordFinding(null,"INVALID_EVENT");
     assertEquals(List.of("input_received"), messages());
     appender.list.clear();
     doReturn(null).when(checkpoints).claim();
@@ -263,8 +266,7 @@ class WorkerEventsLoggingTest {
   void lostLeaseCancelsParsingAndCannotPublishOrSave() throws Exception {
     var lease = lease(1);
     var parser = mock(ParserClient.class);
-    var events = new WorkerEvents(checkpoints, objects, sandbox, parser, kafka);
-    events.renewalMillis = 20;
+    var events = dev.atlaslab.worker.bootstrap.WorkerAssembly.create(checkpoints, objects, sandbox, parser, kafka,20);
     when(objects.get(input.objectKey())).thenReturn(new byte[] {1});
     when(parser.parse(any()))
         .thenAnswer(
@@ -284,7 +286,7 @@ class WorkerEventsLoggingTest {
   void parserPermanentFailureSkipsRetriesAndInvalidPdfSkipsParser() throws Exception {
     var lease = lease(1);
     var parser = mock(ParserClient.class);
-    var events = new WorkerEvents(checkpoints, objects, sandbox, parser, kafka);
+    var events = dev.atlaslab.worker.bootstrap.WorkerAssembly.create(checkpoints, objects, sandbox, parser, kafka);
     when(objects.get(input.objectKey())).thenReturn(new byte[] {1});
     when(parser.parse(any())).thenThrow(new ParserClient.Rejected());
     doReturn(true).when(checkpoints).finish(eq(lease), any());

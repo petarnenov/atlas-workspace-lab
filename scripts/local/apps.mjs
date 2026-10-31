@@ -5,6 +5,7 @@ for (const line of readFileSync(".env", "utf8").split("\n")) {
   const m = /^([A-Z_]+)=(.*)$/.exec(line);
   if (m) env[m[1]] = m[2];
 }
+env.LAB_ARTIFACT_ENABLED ??= "true";
 mkdirSync(".local/logs", { recursive: true });
 const modules = new Map([
   ["parser-forward", "scripts/local/parser-forward.mjs"],
@@ -36,7 +37,12 @@ function start(name) {
       "-jar",
       `${modules.get(name)}/build/libs/${name}-0.1.0-SNAPSHOT.jar`,
     ],
-    { env, stdio: ["ignore", log, log] },
+    { env: {...env,
+      SERVER_PORT:String(name==='asset-service'?(env.ATLAS_ASSET_PORT??8081):name==='processing-worker'?(env.ATLAS_WORKER_PORT??8082):(env.ATLAS_API_PORT??8080)),
+      LAB_ASSET_URL:`http://127.0.0.1:${env.ATLAS_ASSET_PORT??8081}`,
+      LAB_ARTIFACT_URL:`http://127.0.0.1:${env.ATLAS_ASSET_PORT??8081}`,
+      LAB_WORKER_URL:`http://127.0.0.1:${env.ATLAS_WORKER_PORT??8082}`,
+      LAB_DOCLING_URL:`http://127.0.0.1:${env.ATLAS_PARSER_PORT??8083}`}, stdio: ["ignore", log, log] },
   );
   children.set(name, child);
   state();

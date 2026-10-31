@@ -6,7 +6,7 @@ import {startForward} from './parser-forward.mjs';
 test('local bridge relays authenticated HTTP using fixed argv and closes its child',async()=>{
  let killed=false;
  const server=startForward(0,(command,args)=>{
-  assert.equal(command,'docker');assert.deepEqual(args,['exec','-i','atlas-lab-docling-parser-1','/app/.venv/bin/python','/app/stdio_bridge.py']);
+  assert.equal(command,'docker');assert.deepEqual(args,['exec','-i',`${process.env.ATLAS_COMPOSE_PROJECT??'atlas-lab'}-docling-parser-1`,'/app/.venv/bin/python','/app/stdio_bridge.py']);
   const child=new EventEmitter();child.stdin=new PassThrough();child.stdout=new PassThrough();child.kill=()=>{killed=true;};
   child.stdin.once('data',data=>{assert.match(data.toString(),/Authorization: Bearer synthetic/i);child.stdout.end('HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: close\r\n\r\nSaved');});return child;
  });

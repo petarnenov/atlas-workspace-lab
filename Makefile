@@ -1,5 +1,15 @@
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
+.PHONY: ci ci-policy-test contracts-validate helm-test-dev helm-security-dev
+ci: ## Run applicable CI checks locally in dev mode; fail fast and record evidence
+	node scripts/ci/local.mjs
+ci-policy-test: ## Verify hosted workflows accept only dev-to-main promotion
+	node --test scripts/ci/promotion.test.mjs scripts/ci/contracts.test.mjs
+	node --test --experimental-test-coverage --test-coverage-include='scripts/ci/local.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/ci/local.test.mjs
+contracts-validate: ## Validate all OpenAPI/AsyncAPI versions with authoritative validators
+	pnpm exec node scripts/validate-asyncapi.mjs
+	npx --yes @redocly/cli@2.72.1 lint contracts/openapi/*.json --extends=spec
+	node --test scripts/validate-asyncapi.test.mjs
 TENANT ?= a
 export TENANT
 .PHONY: help doctor setup prepare up stop status apps dev ui token build build-ui test test-tools test-java test-frontend test-integration test-e2e check check-scaffold check-architecture check-contracts graph affected-build affected-test measure-builds install-trivy security
@@ -39,6 +49,10 @@ test: ## Run parser, tooling, Java, frontend, integration and E2E sequentially
 	$(MAKE) test-integration
 	$(MAKE) test-e2e
 test-tools: ## Test Make helpers with measured coverage gates
+	node --test --experimental-test-coverage --test-coverage-include='scripts/local/restore-check.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/local/restore-check.test.mjs
+	node --test --experimental-test-coverage --test-coverage-include='scripts/local/build-component.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/local/build-component.test.mjs
+	node --test --experimental-test-coverage --test-coverage-include='scripts/local/artifact-maintenance.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/local/artifact-maintenance.test.mjs
+	node --test --experimental-test-coverage --test-coverage-include='scripts/local/artifact-credentials.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/local/artifact-credentials.test.mjs
 	node --test --experimental-test-coverage --test-coverage-include='scripts/local/parsed-copy.mjs' --test-coverage-include='scripts/local/parser-credentials.mjs' --test-coverage-include='scripts/local/parser-forward.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/local/parsed-copy.test.mjs scripts/local/parser-forward.test.mjs
 	node --test --experimental-test-coverage --test-coverage-include='scripts/local/make-tools.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/local/make-tools.test.mjs
 test-java: ## Run Java unit tests
@@ -57,6 +71,15 @@ check-scaffold: ## Validate repository scaffold
 	pnpm check:scaffold
 check-architecture: ## Validate architecture boundaries
 	pnpm check:architecture
+.PHONY: architecture-check architecture-audit architecture-inventory architecture-test
+architecture-check: ## Reject new architectural debt; report reviewed existing debt
+	node scripts/check-architecture.mjs
+architecture-audit: ## Strict audit, fails on ALL remaining debt
+	node scripts/architecture-guardrails.mjs audit
+architecture-inventory: ## Print read-only findings (never accepts a baseline)
+	node scripts/architecture-guardrails.mjs inventory
+architecture-test: ## Test guardrails offline with source/branch coverage gates
+	node --test --experimental-test-coverage --test-coverage-include='scripts/architecture-guardrails.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/architecture-guardrails.test.mjs
 check-contracts: ## Validate versioned contracts
 	pnpm check:contracts
 graph: ## Open Nx project graph
@@ -97,7 +120,7 @@ k8s-token: ## Generate Kubernetes synthetic token (TENANT=a or b)
 	@node scripts/k8s/runtime.mjs token
 k8s-test: ## Run Kubernetes tooling checks and real cluster E2E/failure tests
 	./gradlew :processing-worker:k8sProbeCheck --no-daemon
-	node --test --experimental-test-coverage --test-coverage-include='scripts/k8s/*.mjs' --test-coverage-exclude='scripts/k8s/*.test.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/k8s/runtime.test.mjs
+	env -u ATLAS_CLUSTER -u ATLAS_RUNTIME_ROOT node --test --experimental-test-coverage --test-coverage-include='scripts/k8s/*.mjs' --test-coverage-exclude='scripts/k8s/*.test.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/k8s/runtime.test.mjs
 	pnpm exec playwright test --config playwright.k8s.config.ts
 k8s-security: ## Scan Kubernetes manifests and all loaded workload images
 	node scripts/k8s/security.mjs
@@ -139,18 +162,53 @@ helm-stop: ## Stop selected environment, preserving releases, Secrets and PVCs
 helm-rollback: ## Roll back one compatible app release (SERVICE=... REVISION=...)
 	node scripts/helm/runtime.mjs rollback
 helm-test: ## Run Helm helper coverage, chart checks and real two-environment E2E
-	node --test --experimental-test-coverage --test-coverage-include='scripts/helm/*.mjs' --test-coverage-exclude='scripts/helm/*.test.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/helm/runtime.test.mjs
+	env -u ATLAS_CLUSTER -u ATLAS_RUNTIME_ROOT node --test --experimental-test-coverage --test-coverage-include='scripts/helm/*.mjs' --test-coverage-exclude='scripts/helm/*.test.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/helm/runtime.test.mjs
 	pnpm exec playwright test --config playwright.helm.config.ts
+helm-test-dev: ## Run local Helm helper and dev-only runtime tests
+	env -u ATLAS_CLUSTER -u ATLAS_RUNTIME_ROOT node --test --experimental-test-coverage --test-coverage-include='scripts/helm/*.mjs' --test-coverage-exclude='scripts/helm/*.test.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/helm/runtime.test.mjs
+	ATLAS_HELM_TEST_ENV=dev pnpm exec playwright test --config playwright.helm.config.ts
 helm-security: ## Scan charts, rendered profiles and their deployed images
 	node scripts/helm/security.mjs
+helm-security-dev: ## Scan only the local dev profile, images and repository
+	ATLAS_HELM_TEST_ENV=dev node scripts/helm/security.mjs
 
 FORMAT ?= markdown
 export ASSET_ID FORMAT
-.PHONY: parsed-copy parser-build parser-test
-parsed-copy: ## Show authorized saved parsed PDF (ENV=dev ASSET_ID=uuid FORMAT=markdown|json TENANT=a|b)
+.PHONY: parsed-copy parsed-copy-legacy parser-build parser-test
+parsed-copy-legacy: ## Show legacy native parsed JSON (same authorization)
+	@PARSED_API_VERSION=1 FORMAT=json node scripts/local/parsed-copy.mjs
+parsed-copy: ## Show authorized neutral saved parsed PDF (ENV=dev ASSET_ID=uuid FORMAT=markdown|json TENANT=a|b)
 	@node scripts/local/parsed-copy.mjs
 parser-build: ## Build independently deployable locked offline Docling image
 	docker build --provenance=false -t atlas/docling-parser:candidate services/docling-parser
 parser-test: ## Run parser unit/quality checks and measured Python coverage in container
 	docker build --target test -t atlas/docling-parser:test services/docling-parser
 	docker run --rm --network=none atlas/docling-parser:test
+
+.PHONY: artifacts-pause artifacts-snapshot artifacts-migrate artifacts-verify artifacts-rollback-copy artifacts-reconcile artifacts-resume
+artifacts-pause: ## Dev maintenance: pause uploads, drain publications and stop writers
+	node scripts/local/artifact-maintenance.mjs pause
+artifacts-snapshot: ## Save private restorable DB/object snapshots and owner exports
+	node scripts/local/artifact-maintenance.mjs snapshot
+artifacts-migrate: ## Import verified legacy copies through the asset owner (idempotent)
+	node scripts/local/artifact-maintenance.mjs migrate
+artifacts-verify: ## Verify historical per-tenant counts/checksums through owner exports
+	node scripts/local/artifact-maintenance.mjs verify
+artifacts-rollback-copy: ## Restore and verify old worker reader copies including new writes
+	node scripts/local/artifact-maintenance.mjs rollback-copy
+artifacts-reconcile: ## Bounded reference reconciliation, dry-run only; never deletes
+	node scripts/local/artifact-maintenance.mjs reconcile
+artifacts-resume: ## Restore recorded dev replicas after reviewed maintenance
+	node scripts/local/artifact-maintenance.mjs resume
+
+.PHONY: component-build
+component-build: ## Independently assemble exactly one application (SERVICE=processing-worker)
+	node scripts/local/build-component.mjs
+
+.PHONY: artifacts-restore-check
+artifacts-restore-check: ## Restore DB/object backups into isolated disposable Compose containers and verify copies
+	node scripts/local/artifact-maintenance.mjs restore-check
+
+.PHONY: build-boundaries
+build-boundaries: ## Verify Nx affected build boundaries without rebuilding unrelated services
+	node scripts/local/measure-builds.mjs --check-only

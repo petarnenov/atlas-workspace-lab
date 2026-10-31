@@ -22,7 +22,8 @@
       },
       "data": {
         "asset.json": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:PutObject\",\"s3:GetObject\",\"s3:DeleteObject\"],\"Resource\":[\"arn:aws:s3:::synthetic-assets/*\"]}]}\n",
-        "worker.json": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::synthetic-assets/*\"]}]}\n"
+        "worker.json": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::synthetic-assets/*\"]}]}\n",
+        "artifact.json": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:PutObject\",\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::synthetic-derived/*\"]}]}\n"
       }
     },
     {
@@ -1009,7 +1010,7 @@
                 "command": [
                   "/bin/sh",
                   "-ec",
-                  "for topic in asset.uploaded.v1 asset.processed.v1; do /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --create --if-not-exists --topic \"$topic\" --partitions 1 --replication-factor 1 --config retention.ms=604800000; done"
+                  "for topic in asset.uploaded.v1 asset.processed.v1 asset.processed.v2; do /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --create --if-not-exists --topic \"$topic\" --partitions 1 --replication-factor 1 --config retention.ms=604800000; done"
                 ],
                 "envFrom": [],
                 "resources": {
@@ -1092,6 +1093,11 @@
                   {
                     "secretRef": {
                       "name": "storage-bootstrap"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "artifact-storage-bootstrap"
                     }
                   }
                 ],
@@ -1202,6 +1208,10 @@
                   {
                     "name": "LAB_SERVICE_PRIVATE_KEY",
                     "value": "/keys/service-private.pem"
+                  },
+                  {
+                    "name": "LAB_ARTIFACT_ENABLED",
+                    "value": "true"
                   }
                 ],
                 "securityContext": {
@@ -1369,6 +1379,23 @@
                         "key": "LAB_ASSET_OBJECT_PASSWORD"
                       }
                     }
+                  },
+                  {
+                    "name": "LAB_ARTIFACT_ENABLED",
+                    "value": "true"
+                  },
+                  {
+                    "name": "LAB_ARTIFACT_OBJECT_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "artifact-owner",
+                        "key": "LAB_ARTIFACT_OBJECT_PASSWORD"
+                      }
+                    }
+                  },
+                  {
+                    "name": "LAB_WORKER_PUBLIC_KEY",
+                    "value": "/artifact-keys/worker-public.pem"
                   }
                 ],
                 "securityContext": {
@@ -1398,6 +1425,11 @@
                   {
                     "name": "keys",
                     "mountPath": "/keys",
+                    "readOnly": true
+                  },
+                  {
+                    "name": "artifact-keys",
+                    "mountPath": "/artifact-keys",
                     "readOnly": true
                   }
                 ],
@@ -1448,6 +1480,19 @@
                     {
                       "key": "service-public.pem",
                       "path": "service-public.pem"
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "artifact-keys",
+                "secret": {
+                  "secretName": "artifact-owner",
+                  "defaultMode": 288,
+                  "items": [
+                    {
+                      "key": "worker-public.pem",
+                      "path": "worker-public.pem"
                     }
                   ]
                 }
@@ -1559,6 +1604,18 @@
                   {
                     "name": "SPRING_KAFKA_CONSUMER_CLIENT_ID",
                     "value": "$(POD_NAME)"
+                  },
+                  {
+                    "name": "LAB_ARTIFACT_ENABLED",
+                    "value": "true"
+                  },
+                  {
+                    "name": "LAB_WORKER_PRIVATE_KEY",
+                    "value": "/artifact-keys/worker-private.pem"
+                  },
+                  {
+                    "name": "LAB_ARTIFACT_URL",
+                    "value": "http://asset-service:8081"
                   }
                 ],
                 "securityContext": {
@@ -1593,6 +1650,11 @@
                   {
                     "name": "parser-keys",
                     "mountPath": "/parser-keys",
+                    "readOnly": true
+                  },
+                  {
+                    "name": "artifact-keys",
+                    "mountPath": "/artifact-keys",
                     "readOnly": true
                   }
                 ],
@@ -1649,6 +1711,19 @@
                 "secret": {
                   "secretName": "parser-access",
                   "defaultMode": 288
+                }
+              },
+              {
+                "name": "artifact-keys",
+                "secret": {
+                  "secretName": "artifact-writer",
+                  "defaultMode": 288,
+                  "items": [
+                    {
+                      "key": "worker-private.pem",
+                      "path": "worker-private.pem"
+                    }
+                  ]
                 }
               }
             ]
@@ -2216,6 +2291,80 @@
         "podSelector": {
           "matchLabels": {
             "app": "workspace-api"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "asset-service"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 8081
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "worker-artifacts-in",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "asset-service"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "processing-worker"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 8081
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "worker-artifacts-out",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "processing-worker"
           }
         },
         "policyTypes": [

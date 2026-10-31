@@ -1,0 +1,231 @@
+{
+  "asyncapi": "3.0.0",
+  "info": {
+    "title": "Atlas Asset Processing Events",
+    "version": "2.0.0",
+    "description": "LAB-108 processed-v2 contract. Uploaded-v1 is unchanged; only the worker publishes processed-v2."
+  },
+  "defaultContentType": "application/json",
+  "servers": {
+    "local": {
+      "host": "localhost:9092",
+      "protocol": "kafka",
+      "description": "Local Docker Compose broker; no public deployment implied"
+    }
+  },
+  "channels": {
+    "assetUploaded": {
+      "address": "asset.uploaded.v1",
+      "messages": {
+        "AssetUploaded": {
+          "$ref": "#/components/messages/AssetUploaded"
+        }
+      }
+    },
+    "assetProcessed": {
+      "address": "asset.processed.v2",
+      "messages": {
+        "AssetProcessed": {
+          "$ref": "#/components/messages/AssetProcessed"
+        }
+      }
+    }
+  },
+  "operations": {
+    "assetServicePublishUpload": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/assetUploaded"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/assetUploaded/messages/AssetUploaded"
+        }
+      ]
+    },
+    "workerReceiveUpload": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/assetUploaded"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/assetUploaded/messages/AssetUploaded"
+        }
+      ]
+    },
+    "workerPublishOutcome": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/assetProcessed"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/assetProcessed/messages/AssetProcessed"
+        }
+      ]
+    },
+    "assetServiceReceiveOutcome": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/assetProcessed"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/assetProcessed/messages/AssetProcessed"
+        }
+      ]
+    }
+  },
+  "components": {
+    "messages": {
+      "AssetUploaded": {
+        "name": "AssetUploaded",
+        "contentType": "application/json",
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "eventId",
+            "assetId",
+            "tenantId",
+            "schemaVersion",
+            "occurredAt",
+            "correlationId",
+            "objectKey"
+          ],
+          "properties": {
+            "eventId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "assetId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "tenantId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "schemaVersion": {
+              "type": "string",
+              "const": "1"
+            },
+            "occurredAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "correlationId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "objectKey": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Opaque server-generated storage key; never trust user input"
+            }
+          }
+        }
+      },
+      "AssetProcessed": {
+        "name": "AssetProcessed",
+        "contentType": "application/json",
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "eventId",
+            "assetId",
+            "tenantId",
+            "schemaVersion",
+            "occurredAt",
+            "correlationId",
+            "outcome",
+            "inputEventId"
+          ],
+          "properties": {
+            "eventId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "assetId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "tenantId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "schemaVersion": {
+              "type": "string",
+              "const": "2"
+            },
+            "occurredAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "correlationId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "outcome": {
+              "type": "string",
+              "enum": [
+                "COMPLETED",
+                "FAILED"
+              ]
+            },
+            "errorCode": {
+              "type": "string",
+              "enum": [
+                "INVALID_DOCUMENT",
+                "PROCESSING_ERROR",
+                "RETRY_EXHAUSTED"
+              ]
+            },
+            "inputEventId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "artifactId": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "oneOf": [
+            {
+              "properties": {
+                "outcome": {
+                  "const": "COMPLETED"
+                }
+              },
+              "required": [
+                "artifactId"
+              ],
+              "not": {
+                "required": [
+                  "errorCode"
+                ]
+              }
+            },
+            {
+              "properties": {
+                "outcome": {
+                  "const": "FAILED"
+                }
+              },
+              "required": [
+                "errorCode"
+              ],
+              "not": {
+                "required": [
+                  "artifactId"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
