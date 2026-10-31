@@ -50,7 +50,7 @@
             "name": "processing-worker",
             "image": {{ index .Values.images "processing-worker" | toJson }},
             "imagePullPolicy": "Never",
-            "env": [
+            "env": [{"name": "LAB_ARTIFACT_ENABLED", "value": {{ .Values.artifactsEnabled | quote }}},{"name": "LAB_WORKER_PRIVATE_KEY", "value": "/artifact-keys/worker-private.pem"},{"name": "LAB_ARTIFACT_URL", "value": "http://asset-service:8081"},
               {
                 "name": "SERVER_ADDRESS",
                 "value": "0.0.0.0"
@@ -124,7 +124,7 @@
               }
             },
             "resources": {{ index .Values.resources "processing-worker" | toJson }},
-            "volumeMounts": [
+            "volumeMounts": [{"name": "artifact-keys", "mountPath": "/artifact-keys", "readOnly": true},
               {
                 "name": "tmp",
                 "mountPath": "/tmp"
@@ -168,7 +168,7 @@
             }
           }
         ],
-        "volumes": [
+        "volumes": [{"name": "artifact-keys", "secret": {"secretName": {{ index .Values.secretRefs "artifact-writer" | toJson }}, "defaultMode": 288, "items": [{"key": "worker-private.pem", "path": "worker-private.pem"}]}},
           {
             "name": "tmp",
             "emptyDir": {

@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "roots": [
+    "apps",
+    "services",
+    "workers",
+    "libraries"
+  ],
+  "files": {
+    "libraries/demo-support/src/main/java/dev/atlaslab/demo/Errors.java": "outbound",
+    "libraries/demo-support/src/main/java/dev/atlaslab/demo/HttpFailure.java": "outbound",
+    "libraries/demo-support/src/main/java/dev/atlaslab/demo/Identity.java": "outbound",
+    "libraries/demo-support/src/main/java/dev/atlaslab/demo/KafkaSafety.java": "outbound",
+    "libraries/demo-support/src/main/java/dev/atlaslab/demo/ObjectsStore.java": "outbound",
+    "libraries/demo-support/src/main/java/dev/atlaslab/demo/PdfUpload.java": "application",
+    "libraries/demo-support/src/main/java/dev/atlaslab/demo/Wire.java": "outbound",
+    "services/asset-service/src/main/java/dev/atlaslab/assets/AssetApplication.java": "bootstrap",
+    "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java": "inbound",
+    "services/asset-service/src/main/java/dev/atlaslab/assets/AssetHttp.java": "inbound",
+    "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java": "application",
+    "services/docling-parser/convert.py": "outbound",
+    "services/docling-parser/download_models.py": "outbound",
+    "services/docling-parser/parser_service.py": "inbound",
+    "services/docling-parser/stdio_bridge.py": "outbound",
+    "services/workspace-api/src/main/java/dev/atlaslab/workspace/ParsedProxy.java": "inbound",
+    "services/workspace-api/src/main/java/dev/atlaslab/workspace/WorkspaceApplication.java": "bootstrap",
+    "services/workspace-api/src/main/java/dev/atlaslab/workspace/WorkspaceHttp.java": "inbound",
+    "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java": "outbound",
+    "workers/processing-worker/src/main/java/dev/atlaslab/worker/ParsedHttp.java": "inbound",
+    "workers/processing-worker/src/main/java/dev/atlaslab/worker/ParserClient.java": "outbound",
+    "workers/processing-worker/src/main/java/dev/atlaslab/worker/PdfProbe.java": "outbound",
+    "workers/processing-worker/src/main/java/dev/atlaslab/worker/ProcessingWorkerApplication.java": "bootstrap",
+    "workers/processing-worker/src/main/java/dev/atlaslab/worker/Sandbox.java": "outbound",
+    "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java": "inbound"
+  },
+  "providerContracts": [
+    "contracts/openapi/parser-internal.v1.json"
+  ]
+}

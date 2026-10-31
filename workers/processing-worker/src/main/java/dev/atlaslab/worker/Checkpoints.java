@@ -23,12 +23,12 @@ public class Checkpoints {
     try {
       input = Wire.event(raw, true);
     } catch (IllegalArgumentException invalid) {
-      finding(null, "INVALID_EVENT");
+      recordFinding(null, "INVALID_EVENT");
       return;
     }
     // A valid object reference must be a generated opaque UUID key, never an arbitrary URL/path.
     if (!input.objectKey().matches("[0-9a-f-]{36}\\.pdf")) {
-      finding(input.eventId(), "UNSAFE_OBJECT_KEY");
+      recordFinding(input.eventId(), "UNSAFE_OBJECT_KEY");
       return;
     }
     String payload = Wire.json(input),
@@ -53,7 +53,7 @@ public class Checkpoints {
                     (rs, n) -> rs.getString(1),
                     input.eventId());
             if (old.isEmpty() || !old.getFirst().equals(hash))
-              finding(input.eventId(), "CONFLICTING_INPUT");
+              recordFinding(input.eventId(), "CONFLICTING_INPUT");
           }
         });
   }
@@ -96,7 +96,7 @@ public class Checkpoints {
   }
 
   public boolean finishParsed(
-      Map<String, Object> lease, Wire.Event input, ParserClient.Parsed parsed) {
+      Map<String, Object> lease, Wire.Event input, dev.atlaslab.worker.domain.WorkModel.Parsed parsed) {
     return Boolean.TRUE.equals(
         tx.execute(
             status -> {
@@ -113,7 +113,7 @@ public class Checkpoints {
                   parsed.pipeline(),
                   parsed.pages(),
                   parsed.markdown(),
-                  parsed.document());
+                  parsed.nativeJson());
               return true;
             }));
   }
@@ -127,7 +127,30 @@ public class Checkpoints {
         lease.get("fence"));
   }
 
-  void finding(String event, String reason) {
+  public void recordFinding(String event, String reason) {
     db.update("INSERT INTO worker_finding(event_id,reason) VALUES(?::uuid,?)", event, reason);
   }
+  public java.util.List<dev.atlaslab.worker.domain.WorkModel.Publication> claimPublications() {
+    var claimed=new java.util.ArrayList<dev.atlaslab.worker.domain.WorkModel.Publication>();
+    for(var candidate:db.queryForList("SELECT event_id FROM checkpoint WHERE outcome IS NOT NULL AND sent=false AND publication_attempts<3 AND publish_after<=now() LIMIT 1")) {
+      var rows=db.queryForList("UPDATE checkpoint SET publication_attempts=publication_attempts+1,publish_after=now()+interval '10 seconds' WHERE event_id=?::uuid AND outcome IS NOT NULL AND sent=false AND publication_attempts<3 AND publish_after<=now() RETURNING *",candidate.get("event_id").toString());
+      if(!rows.isEmpty()) {
+        var row=rows.getFirst();
+        claimed.add(new dev.atlaslab.worker.domain.WorkModel.Publication(row.get("event_id").toString(),row.get("asset_id").toString(),row.get("correlation_id").toString(),((Number)row.get("publication_attempts")).intValue(),row.get("outcome").toString()));
+      }
+    }
+    return claimed;
+  }
+  public void sent(String id) {
+    db.update("UPDATE checkpoint SET sent=true,last_error=NULL WHERE event_id=?::uuid",id);
+  }
+  public void publicationFailed(String id) {
+    db.update("UPDATE checkpoint SET last_error='BROKER_UNAVAILABLE',publish_after=now()+((power(2,publication_attempts-1))::text||' seconds')::interval WHERE event_id=?::uuid",id);
+  }
+
+  public boolean finishV2(Map<String,Object> lease,Wire.Event input,String artifactId,String error) {
+    return db.update("UPDATE checkpoint SET outcome=?,lease_until=NULL,last_error=? WHERE event_id=?::uuid AND fence=? AND lease_until>now() AND outcome IS NULL",
+      Wire.json(Wire.processedV2(input,artifactId,error)),error,lease.get("event_id").toString(),lease.get("fence"))==1;
+  }
+
 }

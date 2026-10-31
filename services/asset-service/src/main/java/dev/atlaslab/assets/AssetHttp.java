@@ -16,7 +16,7 @@ public class AssetHttp {
   }
 
   @PostMapping("/internal/v1/assets")
-  public ResponseEntity<Wire.Receipt> upload(
+  public ResponseEntity<dev.atlaslab.assets.domain.AssetModel.Receipt> upload(
       @RequestHeader(value = "Authorization", required = false) String auth,
       @RequestHeader(value = "Idempotency-Key", required = false) String key,
       @RequestPart("file") MultipartFile file)
@@ -24,13 +24,14 @@ public class AssetHttp {
     Identity.Context who = identity.verify(auth);
     byte[] bytes = file.getInputStream().readNBytes(ObjectsStore.MAX_BYTES + 1);
     return ResponseEntity.accepted()
-        .body(assets.upload(who, key, file.getOriginalFilename(), file.getContentType(), bytes));
+        .body(assets.upload(new dev.atlaslab.assets.domain.AssetModel.Actor(who.tenant(),who.subject()), key, file.getOriginalFilename(), file.getContentType(), bytes));
   }
 
   @GetMapping("/internal/v1/assets/{assetId}")
-  public Wire.Detail read(
+  public dev.atlaslab.assets.domain.AssetModel.Detail read(
       @RequestHeader(value = "Authorization", required = false) String auth,
       @PathVariable String assetId) {
-    return assets.read(identity.verify(auth), assetId);
+    var who=identity.verify(auth);
+    return assets.read(new dev.atlaslab.assets.domain.AssetModel.Actor(who.tenant(),who.subject()), assetId);
   }
 }

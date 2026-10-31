@@ -25,25 +25,13 @@ class ParserClientTest {
   @BeforeEach
   void setup() throws Exception {
     status = 200;
-    result =
-        new LinkedHashMap<>(
-            Map.of(
-                "sourceSha256",
-                PdfUpload.digest(pdf),
-                "parserVersion",
-                "2.145.0",
-                "pipelineVersion",
-                ParserClient.PIPELINE,
-                "pageCount",
-                1,
-                "markdown",
-                "Expected text",
-                "document",
-                Map.of("schema_name", "DoclingDocument", "version", "1.10.0")));
+    result=new LinkedHashMap<>(Map.of("sourceSha256",PdfUpload.digest(pdf),"pageCount",1,
+      "document",Map.of("schemaVersion","1","markdown","Expected text"),
+      "provenance",Map.of("converter","fixture-converter","pipeline","fixture-pipeline")));
     Files.writeString(temp.resolve("token"), "a".repeat(48));
     server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
     server.createContext(
-        "/internal/v1/parse",
+        "/internal/v2/parse",
         exchange -> {
           assertEquals(
               "Bearer " + "a".repeat(48), exchange.getRequestHeaders().getFirst("Authorization"));
@@ -78,7 +66,7 @@ class ParserClientTest {
       assertThrows(java.io.IOException.class, () -> client.parse(pdf));
     }
     status = 200;
-    result.put("markdown", "x".repeat(ParserClient.MAX_OUTPUT + 1));
+    result.put("document", Map.of("schemaVersion","1","markdown","x".repeat(ParserClient.MAX_OUTPUT+1)));
     assertThrows(ParserClient.Rejected.class, () -> client.parse(pdf));
   }
 
@@ -87,21 +75,17 @@ class ParserClientTest {
     for (var invalid :
         List.of(
             Map.entry("sourceSha256", "0".repeat(64)),
-            Map.entry("parserVersion", "unknown"),
-            Map.entry("pipelineVersion", "unknown"),
-            Map.entry("pageCount", 0),
-            Map.entry("pageCount", 21),
-            Map.entry("pageCount", "1"),
-            Map.entry("markdown", " "),
-            Map.entry("markdown", 1),
-            Map.entry("document", Map.of("schema_name", "Other", "version", "1.0.0")),
-            Map.entry("document", Map.of("schema_name", "DoclingDocument", "version", "2.0.0")),
+            Map.entry("provenance",Map.of("converter","","pipeline","fixture")),
+            Map.entry("pageCount", 0), Map.entry("pageCount",21), Map.entry("pageCount","1"),
+            Map.entry("document",Map.of("schemaVersion","2","markdown","text")),
+            Map.entry("document",Map.of("schemaVersion","1","markdown"," ")),
+            Map.entry("native",Map.of("mediaType","application/json","content","bad")),
             Map.entry("document", "bad"))) {
       Object old = result.put(invalid.getKey(), invalid.getValue());
       assertThrows(
           ParserClient.Rejected.class,
           () -> client.validate(pdf, new ObjectMapper().writeValueAsBytes(result)));
-      result.put(invalid.getKey(), old);
+      if(old==null)result.remove(invalid.getKey());else result.put(invalid.getKey(), old);
     }
     assertThrows(ParserClient.Rejected.class, () -> client.validate(pdf, "broken JSON".getBytes()));
     result.put("unexpected", true);
@@ -118,7 +102,7 @@ class ParserClientTest {
     Files.writeString(publicKey, pem("PUBLIC", pair.getPublic().getEncoded()));
     Files.writeString(privateKey, pem("PRIVATE", pair.getPrivate().getEncoded()));
     var db = mock(JdbcTemplate.class);
-    var controller = new ParsedHttp(db, publicKey.toString());
+    var controller = new ParsedHttp(new dev.atlaslab.worker.application.ReadLegacyCopy(new dev.atlaslab.worker.adapters.out.JdbcLegacyCopies(db)), publicKey.toString());
     String id = UUID.randomUUID().toString(), tenant = Identity.TENANTS.iterator().next();
     String auth =
         "Bearer "

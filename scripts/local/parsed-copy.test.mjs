@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import {argumentsFor} from './parsed-copy.mjs';
 test('parsed copy command validates environment, canonical ID, format and tenant',()=>{
  const id='11111111-1111-4111-8111-111111111111';
- assert.equal(argumentsFor('dev',id),`/api/v1/assets/${id}/parsed?format=markdown`);
- assert.equal(argumentsFor('prod',id,'json','b'),`/api/v1/assets/${id}/parsed?format=json`);
+ assert.equal(argumentsFor('dev',id),`/api/v2/assets/${id}/parsed?format=markdown`);
+ assert.equal(argumentsFor('prod',id,'json','b'),`/api/v2/assets/${id}/parsed?format=json`);
+ assert.equal(argumentsFor('dev',id,'json','a','1'),`/api/v1/assets/${id}/parsed?format=json`);
+ assert.throws(()=>argumentsFor('dev',id,'json','a','3'));
  for(const args of [['other',id],['dev','$(secret)'],['dev',id,'html'],['dev',id,'json','other']])assert.throws(()=>argumentsFor(...args));
 });
 import {EventEmitter} from 'node:events';

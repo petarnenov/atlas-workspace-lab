@@ -47,7 +47,7 @@
             "name": "asset-service",
             "image": {{ index .Values.images "asset-service" | toJson }},
             "imagePullPolicy": "Never",
-            "env": [
+            "env": [{"name": "LAB_ARTIFACT_ENABLED", "value": {{ .Values.artifactsEnabled | quote }}},{"name": "LAB_WORKER_PUBLIC_KEY", "value": "/artifact-keys/worker-public.pem"},{"name": "LAB_ARTIFACT_OBJECT_PASSWORD", "valueFrom": {"secretKeyRef": {"name": {{ index .Values.secretRefs "artifact-owner" | toJson }}, "key": "LAB_ARTIFACT_OBJECT_PASSWORD"}}},
               {
                 "name": "SERVER_ADDRESS",
                 "value": "0.0.0.0"
@@ -97,7 +97,7 @@
               }
             },
             "resources": {{ index .Values.resources "asset-service" | toJson }},
-            "volumeMounts": [
+            "volumeMounts": [{"name": "artifact-keys", "mountPath": "/artifact-keys", "readOnly": true},
               {
                 "name": "tmp",
                 "mountPath": "/tmp"
@@ -139,7 +139,7 @@
             }
           }
         ],
-        "volumes": [
+        "volumes": [{"name": "artifact-keys", "secret": {"secretName": {{ index .Values.secretRefs "artifact-owner" | toJson }}, "defaultMode": 288, "items": [{"key": "worker-public.pem", "path": "worker-public.pem"}]}},
           {
             "name": "tmp",
             "emptyDir": {

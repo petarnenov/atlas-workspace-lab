@@ -3,9 +3,9 @@ import {spawn} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 
 /** Local harness fixture; fixed Docker exec target, no tokens or document data in argv/logs. */
-export function startForward(port=8083, start=spawn) {
+export function startForward(port=Number(process.env.ATLAS_PARSER_PORT??8083), start=spawn) {
   const server=createServer(socket=>{
-    const child=start('docker',['exec','-i','atlas-lab-docling-parser-1','/app/.venv/bin/python','/app/stdio_bridge.py'],{stdio:['pipe','pipe','ignore']});
+    const child=start('docker',['exec','-i',`${process.env.ATLAS_COMPOSE_PROJECT ?? 'atlas-lab'}-docling-parser-1`,'/app/.venv/bin/python','/app/stdio_bridge.py'],{stdio:['pipe','pipe','ignore']});
     socket.setTimeout(50000,()=>socket.destroy());
     socket.pipe(child.stdin);child.stdout.pipe(socket);
     child.stdin.on('error',()=>socket.destroy());

@@ -1,4 +1,4 @@
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync} from 'node:fs';
 import {Parser} from '@asyncapi/parser';
 
 // Official parser performs schema and semantic validation; all error diagnostics
@@ -9,5 +9,6 @@ export async function validate(source) {
  if(!document||errors.length)throw Error('AsyncAPI validation failed: '+errors.map(item=>item.message).join('; '));
  return document;
 }
-await validate(readFileSync('contracts/asyncapi/asset-events.v1.json','utf8'));
+for (const file of readdirSync('contracts/asyncapi').filter(file=>file.endsWith('.json')))
+ await validate(readFileSync('contracts/asyncapi/'+file,'utf8'));
 console.log('Official AsyncAPI schema and semantic validation passed.');

@@ -28,6 +28,7 @@ in [delivery evidence](../implementation/LAB-101-EVIDENCE.md). No production com
 | P21 | Deferred | No inference/scoring implemented |
 
 ## Mandatory review artifacts
+- Applicable accepted/proposed ADRs and explicit dependency/substitution evidence
 - Issue link and exact OpenSpec proposal revision approved by a human
 - Affected components and explicit scope exclusions
 - API/event contract version and compatibility evidence
@@ -65,3 +66,43 @@ runtime tests; two stateless replicas are explicitly not an HA claim. P20 pins
 Helm/checksums and immutable images and requires explicit compatible rollback.
 P01/P04/P11/P13/P14/P21 remain deferred AI guardrails; no model features are added.
 CI and human review remain mandatory before merge.
+
+## LAB-106 architectural gap / LAB-107 guardrails
+
+LAB-106 passed behavioral, security and deployment checks but did not demonstrate
+hexagonal/microkernel replaceability. At that checkpoint WorkerEvents depended
+on ParserClient; Checkpoints accepted ParserClient.Parsed and stored document
+bodies; ParsedHttp read SQL directly; the parser contract and client required
+Docling schema/version. LAB-108 remediates those dependencies below; the earlier
+behavioral checks never established architectural compliance.
+
+LAB-107 ADR-0001/0002 revision 1 is owner-approved, with minimal reusable
+contracts required. Source/contract checks and fixture tests are implemented;
+the initial exact debt inventory remains pending owner review. At the LAB-107 baseline checkpoint runtime remediation
+was not implemented; that gate deliberately failed on unreviewed inventory.
+No whole-repository compliance claim is justified by a passing future ratchet gate.
+
+
+## LAB-108 approved remediation, implementation in review
+
+Revision 1 (`6bcb255`) authorizes the full extraction and additive contracts.
+ADR-0003 requires task worktrees, reviewed integration into dev, local checks in
+ENV=dev and same-repository dev-to-main hosted promotion. No implementation or
+spec approval authorizes automatic merge or branch-protection changes.
+
+| Principles | Implementation and actual evidence | Remaining limit |
+| --- | --- | --- |
+| P01/P02/P05 | Application-owned worker/parser/artifact ports, thin inbound adapters, bootstrap bindings; asset ownership of derived manifests/content; separate existing RustFS bucket | Semantic review remains mandatory; static inventory alone cannot prove inversion |
+| P03/P12/P20 | Authoritatively validated parser/read v2, processed v2 and staging contracts; v1 compatibility; opaque provider provenance/native capability | Consumer-first rollout and explicit migration before existing-environment cutover |
+| P06–P10 | Verified tenant/workload scopes, dedicated worker staging identity, separate source/derived credentials, no normal derived delete/list; real storage privilege tests | Synthetic demo identities; no production identity/retention claim |
+| P16–P18 | Renewable fencing, hidden staged writes, stable outbox, verified completion/read, owner-scoped migration and rollback tests | Real backup restoration and runtime conformance evidence tracked in LAB-108 evidence; no distributed transaction/availability claim |
+| P19 | >=75% measured Java source coverage and offline parser coverage; tooling/negative policy tests; meaningful integration and browser checks | Exact final candidate, all applicable local checks and human review required |
+| P11/P13–P15/P21 | No model functionality introduced; exact spec approval recorded | AI evaluation and human-control requirements remain binding if AI is added |
+
+The initial 148 scanner findings are removed from current source; the baseline is
+empty and contains no accepted violations. Historical inventory is retained in
+debt-review.md. Corrections to Identity/Wire/Checkpoints/WorkerEvents roles accompany
+actual source extraction, rather than grandfathering mixed classes as adapters.
+See [LAB-108 evidence](../../openspec/changes/lab-108-hexagonal-runtime/evidence.md)
+and [runbook](../implementation/LAB-108-RUNBOOK.md) for completed versus pending
+runtime, security, backup, substitution and release checks.

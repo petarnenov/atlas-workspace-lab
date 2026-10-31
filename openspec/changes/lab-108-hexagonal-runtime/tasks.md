@@ -1,0 +1,32 @@
+# Tasks — revision 1
+
+- [x] Link synthetic LAB-108; inspect accepted ADRs and full debt inventory.
+- [x] Prepare full scope, neutral contracts, asset ownership, migration and failure design.
+- [x] Record requested worktree/dev/promotion-only CI policy in proposed ADR-0003.
+- [x] Obtain exact revision 1 approval, record commit/owner/date and ADR status.
+- [ ] Review/integrate LAB-107 governance into dev; preserve pending debt visibility.
+- [x] Encode and validate reviewed OpenAPI/AsyncAPI shapes before runtime changes.
+- [x] Add source/trigger tests and local Make CI-equivalent entrypoint; update all
+      five workflows for promotion-only policy, preserving required gate semantics.
+- [x] Extract shared identity/upload/event values from transport/crypto/JSON code.
+- [x] Extract asset upload/query/outcome applications and persistence/source ports;
+      prove original idempotency, intent, compensation and dedup failure behavior.
+- [x] Extract worker application/kernel and execution/publication/sandbox/source ports;
+      preserve lease/fence/retries/cancellation and stable durable outcomes.
+- [x] Isolate Docling conversion adapter; add neutral parser v2 and substitution tests.
+- [x] Implement asset-owned ArtifactStore/manifests/staging and scoped identities;
+      test real RustFS, corruption, cross-tenant denial and lost acknowledgements.
+- [x] Add processed v2 consumer first, then worker publisher; prove crash recovery.
+- [x] Add v2 reads, v1 compatibility, BFF routing and Make inspection commands.
+- [x] Implement dev-only migration, snapshots/export/import verification and bounded
+      dry-run reconciliation; prove repeatability and rollback including new writes.
+- [x] Remove obsolete concrete code; update exact file roles, empty debt baseline
+      only after all findings are gone; run strict full audit and semantic review.
+- [x] Run meaningful happy/failure unit, integration, adapter/consumer contracts,
+      >=75% measured source coverage, dev Kubernetes E2E and security checks locally.
+- [x] Verify independent build/deploy, parser three replicas, config-only substitution
+      and original component images in worker black-box conformance tests.
+- [x] Record actual evidence, runbook, compliance matrix and implementation self-review.
+- [ ] Obtain independent human review and integrate to dev, then run mandatory
+      hosted promotion checks on the dev-to-main PR.
+- [ ] Obtain human merge review. Do not auto-merge, archive or delete legacy data.

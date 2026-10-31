@@ -17,3 +17,15 @@ CREATE TABLE IF NOT EXISTS upload_outbox (
 );
 CREATE TABLE IF NOT EXISTS outcome_seen (event_id uuid PRIMARY KEY, payload_hash varchar(64) NOT NULL);
 CREATE TABLE IF NOT EXISTS asset_finding (id bigserial PRIMARY KEY, event_id uuid, reason varchar(64) NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+
+CREATE TABLE IF NOT EXISTS derived_artifact (
+ tenant_id uuid NOT NULL, artifact_id uuid NOT NULL, asset_id uuid NOT NULL REFERENCES asset(asset_id),
+ input_event_id uuid NOT NULL, correlation_id uuid NOT NULL, source_sha256 varchar(64) NOT NULL,
+ attempt_fence bigint NOT NULL CHECK(attempt_fence>0), idem_key uuid NOT NULL,
+ payload_hash varchar(64) NOT NULL, markdown_hash varchar(64) NOT NULL, native_hash varchar(64),
+ converter_revision varchar(128) NOT NULL, pipeline_revision varchar(128) NOT NULL,
+ page_count int NOT NULL CHECK(page_count BETWEEN 1 AND 20),
+ state varchar(16) NOT NULL CHECK(state IN ('WRITING','STAGED','COMMITTED')),
+ created_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(tenant_id,artifact_id), UNIQUE(tenant_id,idem_key)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS derived_committed ON derived_artifact(tenant_id,asset_id) WHERE state='COMMITTED';

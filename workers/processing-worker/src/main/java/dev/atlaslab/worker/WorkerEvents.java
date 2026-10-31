@@ -1,210 +1,27 @@
 package dev.atlaslab.worker;
 
-import dev.atlaslab.demo.*;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import dev.atlaslab.demo.Wire;
+import dev.atlaslab.worker.application.ProcessingKernel;
+import dev.atlaslab.worker.domain.WorkModel.Work;
+import org.slf4j.*;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 
-@Component
+/** Thin event and scheduler adapter. */
 public class WorkerEvents {
-  private static final Logger LOG = LoggerFactory.getLogger(WorkerEvents.class);
-  final Checkpoints checkpoints;
-  final ObjectsStore objects;
-  final Sandbox sandbox;
-  final ParserClient parser;
-  long renewalMillis = 15000;
-  final KafkaTemplate<String, String> kafka;
-
-  public WorkerEvents(
-      Checkpoints checkpoints,
-      ObjectsStore objects,
-      Sandbox sandbox,
-      ParserClient parser,
-      KafkaTemplate<String, String> kafka) {
-    this.checkpoints = checkpoints;
-    this.objects = objects;
-    this.sandbox = sandbox;
-    this.parser = parser;
-    this.kafka = kafka;
-  }
-
-  @KafkaListener(topics = "asset.uploaded.v1")
+  private static final Logger LOG=LoggerFactory.getLogger(WorkerEvents.class);
+  private final ProcessingKernel kernel;
+  public WorkerEvents(ProcessingKernel kernel) { this.kernel=kernel; }
+  @KafkaListener(topics="asset.uploaded.v1")
   public void receive(String raw) {
     LOG.info("input_received");
-    checkpoints.accept(raw);
+    final Wire.Event event;
+    try { event=Wire.event(raw,true); }
+    catch(IllegalArgumentException invalid) { kernel.invalidInput();return; }
+    kernel.accept(new Work(event.eventId(),event.assetId(),event.tenantId(),event.correlationId(),event.objectKey(),event.occurredAt()));
   }
-
-  @Scheduled(fixedDelayString = "${lab.worker-delay:500}")
-  public void process() {
-    Map<String, Object> lease = checkpoints.claim();
-    if (lease == null) return;
-    Wire.Event input = Wire.event(lease.get("input_payload").toString(), true);
-    int attempts = ((Number) lease.get("attempts")).intValue();
-    LOG.info(
-        "processing_started eventId={} assetId={} correlationId={} attempt={}",
-        input.eventId(),
-        input.assetId(),
-        input.correlationId(),
-        attempts);
-    if (attempts > 3) {
-      finish(lease, input, "RETRY_EXHAUSTED");
-      return;
-    }
-    var lost = new java.util.concurrent.atomic.AtomicBoolean();
-    Thread processing = Thread.currentThread();
-    Object renewalLock = new Object();
-    var active = new java.util.concurrent.atomic.AtomicBoolean(true);
-    var renewal = java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
-    renewal.scheduleAtFixedRate(
-        () -> {
-          synchronized (renewalLock) {
-            if (!active.get()) return;
-            try {
-              if (checkpoints.renew(lease)) return;
-            } catch (Exception unavailable) {
-              /* Fail closed when ownership cannot be verified. */
-            }
-            lost.set(true);
-            processing.interrupt();
-          }
-        },
-        renewalMillis,
-        renewalMillis,
-        TimeUnit.MILLISECONDS);
-    boolean parsing = false;
-    try {
-      byte[] bytes = objects.get(input.objectKey());
-      String error = sandbox.inspect(bytes);
-      if (lost.get()) return;
-      if (error != null) {
-        finish(lease, input, error);
-        return;
-      }
-      LOG.info(
-          "parser_started eventId={} assetId={} correlationId={}",
-          input.eventId(),
-          input.assetId(),
-          input.correlationId());
-      parsing = true;
-      var parsed = parser.parse(bytes);
-      if (lost.get()) return;
-      if (checkpoints.finishParsed(lease, input, parsed)) {
-        LOG.info(
-            "parser_saved eventId={} assetId={} correlationId={}",
-            input.eventId(),
-            input.assetId(),
-            input.correlationId());
-        LOG.info(
-            "outcome_saved eventId={} assetId={} correlationId={} status=COMPLETED errorCode=NONE",
-            input.eventId(),
-            input.assetId(),
-            input.correlationId());
-      } else {
-        LOG.warn(
-            "outcome_not_saved eventId={} assetId={} correlationId={} reason=STALE_FENCE",
-            input.eventId(),
-            input.assetId(),
-            input.correlationId());
-      }
-    } catch (ParserClient.Rejected permanent) {
-      if (!lost.get()) finish(lease, input, "PROCESSING_ERROR");
-    } catch (Exception transientFailure) {
-      if (lost.get()) return;
-      if (attempts >= 3) finish(lease, input, "RETRY_EXHAUSTED");
-      else {
-        checkpoints.retry(lease);
-        if (parsing)
-          LOG.warn(
-              "parser_retry eventId={} assetId={} correlationId={} attempt={}",
-              input.eventId(),
-              input.assetId(),
-              input.correlationId(),
-              attempts);
-        LOG.warn(
-            "retry_scheduled eventId={} assetId={} correlationId={} attempt={}"
-                + " reason=DEPENDENCY_UNAVAILABLE",
-            input.eventId(),
-            input.assetId(),
-            input.correlationId(),
-            attempts);
-      }
-    } finally {
-      synchronized (renewalLock) {
-        active.set(false);
-        if (lost.get()) Thread.interrupted();
-      }
-      renewal.shutdownNow();
-    }
-  }
-
-  private void finish(Map<String, Object> lease, Wire.Event input, String error) {
-    boolean saved = checkpoints.finish(lease, Wire.outcome(input, error));
-    if (saved) {
-      LOG.info(
-          "outcome_saved eventId={} assetId={} correlationId={} status={} errorCode={}",
-          input.eventId(),
-          input.assetId(),
-          input.correlationId(),
-          error == null ? "COMPLETED" : "FAILED",
-          error == null ? "NONE" : Wire.ERRORS.contains(error) ? error : "PROCESSING_ERROR");
-    } else {
-      LOG.warn(
-          "outcome_not_saved eventId={} assetId={} correlationId={} reason=STALE_FENCE",
-          input.eventId(),
-          input.assetId(),
-          input.correlationId());
-    }
-  }
-
-  @Scheduled(fixedDelayString = "${lab.publisher-delay:500}")
-  public void publish() {
-    for (Map<String, Object> candidate :
-        checkpoints.db.queryForList(
-            "SELECT event_id FROM checkpoint WHERE outcome IS NOT NULL AND sent=false AND"
-                + " publication_attempts<3 AND publish_after<=now() LIMIT 10")) {
-      List<Map<String, Object>> rows =
-          checkpoints.db.queryForList(
-              "UPDATE checkpoint SET"
-                  + " publication_attempts=publication_attempts+1,publish_after=now()+interval '10"
-                  + " seconds' WHERE event_id=?::uuid AND outcome IS NOT NULL AND sent=false AND"
-                  + " publication_attempts<3 AND publish_after<=now() RETURNING *",
-              candidate.get("event_id").toString());
-      if (rows.isEmpty()) continue;
-      Map<String, Object> row = rows.getFirst();
-      try {
-        kafka
-            .send(
-                "asset.processed.v1", row.get("asset_id").toString(), row.get("outcome").toString())
-            .get(6, TimeUnit.SECONDS);
-        checkpoints.db.update(
-            "UPDATE checkpoint SET sent=true,last_error=NULL WHERE event_id=?::uuid",
-            row.get("event_id").toString());
-        LOG.info(
-            "outcome_published eventId={} assetId={} correlationId={} attempt={}",
-            row.get("event_id"),
-            row.get("asset_id"),
-            row.get("correlation_id"),
-            row.get("publication_attempts"));
-      } catch (Exception failure) {
-        checkpoints.db.update(
-            "UPDATE checkpoint SET"
-                + " last_error='BROKER_UNAVAILABLE',publish_after=now()+((power(2,publication_attempts-1))::text||'"
-                + " seconds')::interval WHERE event_id=?::uuid",
-            row.get("event_id").toString());
-        int attempts = ((Number) row.get("publication_attempts")).intValue();
-        LOG.warn(
-            "{} eventId={} assetId={} correlationId={} attempt={} reason=BROKER_UNAVAILABLE",
-            attempts >= 3 ? "publication_exhausted" : "publication_retry_scheduled",
-            row.get("event_id"),
-            row.get("asset_id"),
-            row.get("correlation_id"),
-            attempts);
-      }
-    }
-  }
+  @Scheduled(fixedDelayString="${lab.worker-delay:500}")
+  public void process() { kernel.process(); }
+  @Scheduled(fixedDelayString="${lab.publisher-delay:500}")
+  public void publish() { kernel.publish(); }
 }

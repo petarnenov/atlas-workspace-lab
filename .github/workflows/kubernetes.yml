@@ -1,12 +1,28 @@
 name: Local Kubernetes runtime
 on:
   pull_request:
-  push:
     branches: [main]
 permissions:
   contents: read
 jobs:
+  promotion-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require same-repository dev to main promotion
+        env:
+          PROMOTION_HEAD: ${{ github.event.pull_request.head.ref }}
+          PROMOTION_BASE: ${{ github.event.pull_request.base.ref }}
+          PROMOTION_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          node --input-type=module <<'JS'
+          if (process.env.GITHUB_EVENT_NAME !== 'pull_request' ||
+              process.env.PROMOTION_HEAD !== 'dev' ||
+              process.env.PROMOTION_BASE !== 'main' ||
+              process.env.PROMOTION_REPOSITORY !== process.env.GITHUB_REPOSITORY)
+            throw Error('Only same-repository dev to main promotion is allowed');
+          JS
   kind-runtime:
+    needs: promotion-source
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:

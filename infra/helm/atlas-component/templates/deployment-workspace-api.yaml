@@ -47,7 +47,7 @@
             "name": "workspace-api",
             "image": {{ index .Values.images "workspace-api" | toJson }},
             "imagePullPolicy": "Never",
-            "env": [
+            "env": [{"name": "LAB_ARTIFACT_ENABLED", "value": {{ .Values.artifactsEnabled | quote }}},
               {
                 "name": "SERVER_ADDRESS",
                 "value": "0.0.0.0"

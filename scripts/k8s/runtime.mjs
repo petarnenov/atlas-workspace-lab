@@ -21,8 +21,13 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { manifests } from "./manifests.mjs";
-export const root = ".local/k8s";
-export const context = "kind-atlas-lab";
+import {workerIdentity,artifactPassword} from '../local/artifact-credentials.mjs';
+export const runtimeRoot=process.env.ATLAS_RUNTIME_ROOT ?? ".local";
+if(!/^\.local(?:\/[a-z0-9-]+)*$/.test(runtimeRoot))throw Error("Invalid local runtime directory");
+export const root = `${runtimeRoot}/k8s`;
+export const clusterName=process.env.ATLAS_CLUSTER ?? "atlas-lab";
+if(!/^atlas-[a-z0-9-]{1,40}$/.test(clusterName))throw Error("Invalid dedicated local cluster name");
+export const context = `kind-${clusterName}`;
 export const namespace = "atlas-lab";
 export const versions = JSON.parse(readFileSync("infra/k8s/versions.json"));
 export const kubectlTool = existsSync(".local/tools/kubectl")
@@ -67,7 +72,7 @@ export function validateContext(actual, expected) {
     );
 }
 export function guard(run = execute, read = readFileSync) {
-  const expected = run(kind, ["get", "kubeconfig", "--name", namespace], {
+  const expected = run(kind, ["get", "kubeconfig", "--name", clusterName], {
     quiet: true,
     sensitive: true,
   });
@@ -246,7 +251,7 @@ export function doctor(run = execute) {
     const clusters = run(kind, ["get", "clusters"], { quiet: true })
       .trim()
       .split("\n");
-    if (clusters.includes(namespace)) guard();
+    if (clusters.includes(clusterName)) guard();
     else
       validateLocalConfig(
         JSON.parse(
@@ -268,7 +273,7 @@ export function doctor(run = execute) {
       );
   }
   console.log(
-    "Kubernetes prerequisites OK. Dedicated context: kind-atlas-lab.",
+    `Kubernetes prerequisites OK. Dedicated context: ${context}.`,
   );
 }
 export function validateLocalConfig(config) {
@@ -291,6 +296,12 @@ export function secretObjects(
 ) {
   const key = (name) => read(`${directory}/${name}`, "utf8");
   const entries = {
+    "artifact-owner": {
+      LAB_ARTIFACT_OBJECT_PASSWORD:artifactPassword(c.OBJECT_ADMIN),
+      "worker-public.pem":key('worker-public.pem'),
+    },
+    "artifact-writer": {"worker-private.pem":key('worker-private.pem')},
+    "artifact-storage-bootstrap": {ARTIFACT_OBJECT_PASSWORD:artifactPassword(c.OBJECT_ADMIN)},
     "postgres-admin": {
       POSTGRES_PASSWORD: c.POSTGRES_ADMIN,
       ASSET_DB_PASSWORD: c.ASSET_DB,
@@ -333,8 +344,9 @@ export function secretObjects(
   }));
 }
 export function reconcileSecrets(objects, kube = kubectl) {
+  if(objects.length===0)return;
   const existing = JSON.parse(
-    kube(["get", "secrets", "-o", "json"], { quiet: true, sensitive: true }),
+    kube(["get", "secrets", ...objects.map(item=>item.metadata.name), "--ignore-not-found", "-o", "json"], { quiet: true, sensitive: true }),
   ).items;
   for (const secret of objects) {
     const old = existing.find((s) => s.metadata.name === secret.metadata.name);
@@ -362,7 +374,7 @@ export function setup({ clusterOnly = false } = {}) {
     .split("\n");
   if (
     !clusterOnly &&
-    clusters.includes(namespace) &&
+    clusters.includes(clusterName) &&
     !existsSync(`${root}/credentials.json`)
   )
     throw Error(
@@ -370,12 +382,12 @@ export function setup({ clusterOnly = false } = {}) {
     );
   if (clusterOnly) mkdirSync(root, { recursive: true, mode: 0o700 });
   else localCredentials();
-  if (!clusters.includes(namespace))
+  if (!clusters.includes(clusterName))
     execute(kind, [
       "create",
       "cluster",
       "--name",
-      namespace,
+      clusterName,
       "--image",
       versions.node,
       "--config",
@@ -411,6 +423,7 @@ export function setup({ clusterOnly = false } = {}) {
   );
   if (!found.trim())
     kubectl(["create", "-f", "-"], { input: JSON.stringify(manifests()[0]) });
+  workerIdentity(root,true);
   reconcileSecrets(secretObjects(localCredentials()));
 }
 export function build() {
@@ -504,6 +517,29 @@ export function buildParser() {
   loadImages([tag]);
   return tag;
 }
+export function buildComponent(name) {
+  if(!['workspace-api','asset-service','processing-worker','portal-ui','docling-parser'].includes(name))throw Error('Unknown application component');
+  if(name==='docling-parser')return buildParser();
+  guard();execute('make',['component-build',`SERVICE=${name}`]);
+  const dest=`${root}/build/${name}`;
+  mkdirSync(dest,{recursive:true,mode:0o700});
+  if(name==='portal-ui') {
+    cpSync('infra/k8s/images/UI.Dockerfile',`${dest}/Dockerfile`);
+    cpSync('infra/k8s/images/nginx.conf',`${dest}/nginx.conf`);
+    cpSync('apps/portal-ui/dist',`${dest}/dist`,{recursive:true});
+  } else {
+    cpSync('infra/k8s/images/Java.Dockerfile',`${dest}/Dockerfile`);
+    for(const file of ['WorkerReady.java','NetworkCheck.java'])cpSync(`infra/k8s/images/${file}`,`${dest}/${file}`);
+    cpSync(`${name==='processing-worker'?'workers':'services'}/${name}/build/libs/${name}-0.1.0-SNAPSHOT.jar`,`${dest}/app.jar`);
+    mkdirSync(`${dest}/runtime`,{recursive:true});
+    if(name==='processing-worker')cpSync(`workers/${name}/build/libs/${name}-0.1.0-SNAPSHOT-parser.jar`,`${dest}/runtime/parser.jar`);
+  }
+  const temporary=`atlas/${name}:candidate`;
+  execute('docker',['build','--provenance=false','-t',temporary,dest]);
+  const id=execute('docker',['image','inspect',temporary,'--format','{{.Id}}'],{quiet:true}).trim();
+  const tag=`atlas/${name}:${id.replace('sha256:','')}`;
+  execute('docker',['tag',temporary,tag]);loadImages([tag]);return tag;
+}
 export function loadImages(images, run = execute) {
   const architecture = run(
     "docker",
@@ -526,7 +562,7 @@ export function loadImages(images, run = execute) {
       ["image", "save", "--platform", platform, "--output", archive, ...images],
       { timeout: 900000 },
     );
-    run(kind, ["load", "image-archive", archive, "--name", namespace], {
+    run(kind, ["load", "image-archive", archive, "--name", clusterName], {
       timeout: 900000,
     });
   } finally {
@@ -656,7 +692,7 @@ export function forward() {
       "port-forward",
       "--address=127.0.0.1",
       "service/portal-ui",
-      "5173:8080",
+      `${Number(process.env.ATLAS_UI_PORT??5173)}:8080`,
     ],
     { stdio: "inherit" },
   );

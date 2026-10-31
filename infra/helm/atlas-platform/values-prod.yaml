@@ -11,7 +11,10 @@
     "api-identity": "api-identity",
     "asset-runtime": "asset-runtime",
     "worker-runtime": "worker-runtime",
-    "parser-access": "parser-access"
+    "parser-access": "parser-access",
+    "artifact-owner": "artifact-owner",
+    "artifact-writer": "artifact-writer",
+    "artifact-storage-bootstrap": "artifact-storage-bootstrap"
   },
   "replicas": {
     "portal-ui": 2,

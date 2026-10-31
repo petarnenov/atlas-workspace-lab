@@ -115,4 +115,27 @@ public final class Wire {
         error == null ? "COMPLETED" : "FAILED",
         error);
   }
+  public record ProcessedV2(String eventId,String assetId,String tenantId,String schemaVersion,
+      String occurredAt,String correlationId,String inputEventId,String outcome,String errorCode,String artifactId) {}
+  public static ProcessedV2 processedV2(String raw) {
+    try {
+      var node=JSON.readTree(raw);
+      if(!node.isObject()||!node.path("schemaVersion").isTextual()||!"2".equals(node.path("schemaVersion").asText()))throw new IllegalArgumentException();
+      uuid(node.path("inputEventId").asText());
+      boolean completed="COMPLETED".equals(node.path("outcome").asText());
+      if(completed) {
+        uuid(node.path("artifactId").asText());
+        if(node.has("errorCode"))throw new IllegalArgumentException();
+      } else if(node.has("artifactId")||!node.path("errorCode").isTextual())throw new IllegalArgumentException();
+      var old=((com.fasterxml.jackson.databind.node.ObjectNode)node.deepCopy());
+      old.remove("inputEventId");old.remove("artifactId");old.put("schemaVersion","1");
+      event(JSON.writeValueAsString(old),false);
+      return JSON.treeToValue(node,ProcessedV2.class);
+    } catch(Exception invalid) { throw new IllegalArgumentException("Invalid processed v2 envelope"); }
+  }
+  public static ProcessedV2 processedV2(Event input,String artifactId,String error) {
+    return new ProcessedV2(UUID.randomUUID().toString(),input.assetId(),input.tenantId(),"2",Instant.now().toString(),
+      input.correlationId(),input.eventId(),error==null?"COMPLETED":"FAILED",error,artifactId);
+  }
+
 }

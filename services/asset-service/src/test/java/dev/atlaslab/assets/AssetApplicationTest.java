@@ -4,6 +4,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import dev.atlaslab.demo.*;
+import dev.atlaslab.assets.domain.AssetModel.*;
+import dev.atlaslab.assets.adapters.out.JdbcAssets;
+import dev.atlaslab.assets.ports.SourceStore;
+import dev.atlaslab.assets.application.AssetDelivery;
 import java.util.*;
 import java.util.concurrent.*;
 import org.junit.jupiter.api.*;
@@ -20,8 +24,8 @@ class AssetApplicationTest {
   ObjectsStore store;
   KafkaTemplate<String, String> kafka;
   AssetEvents events;
-  Identity.Context who =
-      new Identity.Context("11111111-1111-4111-8111-111111111111", "synthetic-user");
+  Actor who =
+      new Actor("11111111-1111-4111-8111-111111111111", "synthetic-user");
   byte[] pdf = "%PDF-1.7 synthetic fixture".getBytes();
 
   @BeforeEach
@@ -29,7 +33,7 @@ class AssetApplicationTest {
   void setup() {
     var ds =
         new DriverManagerDataSource(
-            "jdbc:postgresql://localhost:5432/assets",
+            System.getenv().getOrDefault("ASSET_DB_URL","jdbc:postgresql://localhost:5432/assets"),
             "asset_owner",
             System.getenv("LAB_ASSET_DB_PASSWORD"));
     new ResourceDatabasePopulator(new ClassPathResource("schema.sql")).execute(ds);
@@ -38,15 +42,33 @@ class AssetApplicationTest {
         "TRUNCATE outcome_seen,asset_finding,upload_outbox,asset,upload_intent RESTART IDENTITY"
             + " CASCADE");
     store = mock(ObjectsStore.class);
-    assets = new Assets(db, new DataSourceTransactionManager(ds), store);
+    var persistence=new JdbcAssets(db,new DataSourceTransactionManager(ds));
+    SourceStore sources=new SourceStore() {
+      public void put(String reference,byte[] bytes) { store.put(reference,bytes); }
+      public void delete(String reference) { store.delete(reference); }
+    };
+    assets = new Assets(persistence,sources);
     kafka = mock(KafkaTemplate.class);
-    events = new AssetEvents(assets, kafka);
+    events = new AssetEvents(assets, new AssetDelivery(persistence,sources,dispatch->kafka.send("asset.uploaded.v1",dispatch.assetId(),dispatch.payload()).get()),persistence);
     when(kafka.send(anyString(), anyString(), anyString()))
         .thenReturn(CompletableFuture.completedFuture(null));
   }
 
-  Wire.Receipt upload(String key) {
+  Receipt upload(String key) {
     return assets.upload(who, key, "../arbitrary.pdf", "application/pdf", pdf);
+  }
+
+  HttpFailure rejected(org.junit.jupiter.api.function.Executable operation) {
+    RuntimeException failure=assertThrows(RuntimeException.class,operation);
+    if(failure instanceof Failure domain) {
+      int status=switch(domain.kind) { case INVALID_KEY,KEY_REUSED -> 400; case NOT_FOUND -> 404; case UNAVAILABLE -> 503; };
+      return new HttpFailure(status,domain.kind.name(),"Rejected");
+    }
+    if(failure instanceof dev.atlaslab.demo.domain.Rejection domain) {
+      int status=switch(domain.kind()) { case TOO_LARGE -> 413; case UNSUPPORTED_TYPE -> 415; default -> 400; };
+      return new HttpFailure(status,domain.kind().name(),"Rejected");
+    }
+    throw failure;
   }
 
   @Test
@@ -57,18 +79,16 @@ class AssetApplicationTest {
     verify(store, times(1)).put(anyString(), any());
     assertEquals(1, db.queryForObject("SELECT count(*) FROM upload_outbox", Integer.class));
     assertEquals(0, assets.read(who, receipt.assetId()).version());
-    var tenantB = new Identity.Context("22222222-2222-4222-8222-222222222222", "synthetic-user");
+    var tenantB = new Actor("22222222-2222-4222-8222-222222222222", "synthetic-user");
     assertEquals(
-        404, assertThrows(HttpFailure.class, () -> assets.read(tenantB, receipt.assetId())).status);
+        404, rejected(() -> assets.read(tenantB, receipt.assetId())).status);
     assertEquals(
         404,
-        assertThrows(HttpFailure.class, () -> assets.read(who, UUID.randomUUID().toString()))
+        rejected(() -> assets.read(who, UUID.randomUUID().toString()))
             .status);
     assertEquals(
         400,
-        assertThrows(
-                HttpFailure.class,
-                () ->
+        rejected(() ->
                     assets.upload(
                         who, "same", "a.pdf", "application/pdf", "%PDF-1.7 different".getBytes()))
             .status);
@@ -94,14 +114,11 @@ class AssetApplicationTest {
 
   @Test
   void permanentValidationAndStorageFailuresPublishNothing() throws Exception {
-    assertThrows(HttpFailure.class, () -> assets.upload(who, "", "x.pdf", "application/pdf", pdf));
-    assertThrows(
-        HttpFailure.class,
-        () -> assets.upload(who, "x".repeat(129), "x.pdf", "application/pdf", pdf));
-    assertThrows(
-        HttpFailure.class, () -> assets.upload(who, null, "x.txt", "application/pdf", pdf));
+    rejected(() -> assets.upload(who, "", "x.pdf", "application/pdf", pdf));
+    rejected(() -> assets.upload(who, "x".repeat(129), "x.pdf", "application/pdf", pdf));
+    rejected(() -> assets.upload(who, null, "x.txt", "application/pdf", pdf));
     doThrow(new RuntimeException("private dependency details")).when(store).put(anyString(), any());
-    HttpFailure failure = assertThrows(HttpFailure.class, () -> upload("storage-fail"));
+    HttpFailure failure = rejected(() -> upload("storage-fail"));
     assertEquals(503, failure.status);
     assertFalse(failure.getMessage().contains("private"));
     assertEquals(0, db.queryForObject("SELECT count(*) FROM asset", Integer.class));
@@ -114,7 +131,7 @@ class AssetApplicationTest {
     db.execute(
         "ALTER TABLE asset ADD CONSTRAINT synthetic_commit_failure CHECK (status <> 'PENDING')");
     try {
-      assertEquals(503, assertThrows(HttpFailure.class, () -> upload("commit-failure")).status);
+      assertEquals(503, rejected(() -> upload("commit-failure")).status);
       var calls = inOrder(store);
       calls.verify(store).put(anyString(), eq(pdf));
       calls.verify(store).delete(anyString());
@@ -130,7 +147,7 @@ class AssetApplicationTest {
   void compensationFailureRetainsRecoverableIntent() throws Exception {
     doThrow(new RuntimeException()).when(store).put(anyString(), any());
     doThrow(new RuntimeException()).when(store).delete(anyString());
-    assertThrows(HttpFailure.class, () -> upload("recover"));
+    rejected(() -> upload("recover"));
     String id = db.queryForObject("SELECT asset_id::text FROM upload_intent", String.class);
     reset(store);
     assertEquals(id, upload("recover").assetId());
@@ -190,14 +207,14 @@ class AssetApplicationTest {
   void abandonedIntentCleanupAndReciprocalDatabaseDenial() throws Exception {
     doThrow(new RuntimeException()).when(store).put(anyString(), any());
     doThrow(new RuntimeException()).when(store).delete(anyString());
-    assertThrows(HttpFailure.class, () -> upload("abandoned"));
+    rejected(() -> upload("abandoned"));
     reset(store);
     db.update("UPDATE upload_intent SET created_at=now()-interval '11 minutes'");
     events.reconcile();
     assertEquals(0, db.queryForObject("SELECT count(*) FROM upload_intent", Integer.class));
     var denied =
         new DriverManagerDataSource(
-            "jdbc:postgresql://localhost:5432/worker_checkpoint",
+            System.getenv().getOrDefault("WORKER_DB_URL","jdbc:postgresql://localhost:5432/worker_checkpoint"),
             "asset_owner",
             System.getenv("LAB_ASSET_DB_PASSWORD"));
     assertThrows(Exception.class, denied::getConnection);
@@ -209,7 +226,7 @@ class AssetApplicationTest {
     try {
       var futures =
           pool.invokeAll(
-              List.<Callable<Wire.Receipt>>of(
+              List.<Callable<Receipt>>of(
                   () -> upload("parallel"), () -> upload("parallel"), () -> upload("parallel")));
       String id = futures.getFirst().get().assetId();
       for (var f : futures) assertEquals(id, f.get().assetId());

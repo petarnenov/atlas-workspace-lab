@@ -21,6 +21,25 @@ Read **[docs/architecture/principles.md](docs/architecture/principles.md)** befo
 - This PoC is not a clone of any company system.
 
 ## Required SDD flow
+Follow accepted ADR-0003: use dedicated task worktrees, integrate reviewed work
+into `dev`, develop only in dev mode, and run applicable checks locally through
+Make. Hosted workflows are reserved for same-repository `dev` to `main` promotion
+PRs before merge. Never bypass protections or merge without human review.
+
+Read the architecture decision register in `docs/architecture/adr/README.md`
+before proposing a design. Follow accepted ADRs; proposed ADRs need exact owner
+approval, never silently report them as accepted. LAB-107 revision 1 records the
+requested hexagonal/microkernel and replaceable artifact-store target.
+
+Every proposal must identify application-owned ports/types, dependency direction,
+bootstrap bindings, data/lifecycle ownership and substitution tests. Use minimal capability contracts for broad reuse: no provider options, transport
+DTOs or deployment details in core ports. Retain explicit security, integrity and
+failure semantics. Explain how worker,
+parser and storage can change without changing use-case source. Independent
+deployment is not proof of replaceability. Compare storage alternatives and
+document consistency/recovery across storage boundaries. List existing violations
+explicitly; PoC scope, coverage or human spec approval is not an architecture waiver.
+
 1. Link the work to a GitHub Issue (or synthetic Jira-style story).
 2. Propose an OpenSpec change containing proposal, specs, design and tasks; record applicable P-principles and affected contracts.
 3. Require **explicit human approval of the exact specification revision before feature implementation**.
@@ -28,6 +47,11 @@ Read **[docs/architecture/principles.md](docs/architecture/principles.md)** befo
 5. Implement tests for happy and failure paths; run affected checks, coverage and security checks.
 6. Submit PR with issue, spec, approval evidence, affected components and build/test evidence.
 7. Do **not** merge, archive a change or bypass CI protections without human review.
+
+Architecture policy/baseline changes require explicit review. Never automatically
+accept scanner findings, hide new files under legacy exceptions or claim a passing
+ratchet means all existing code complies. Preserve existing security/fencing
+guarantees when proposing ports or moving document content.
 
 ## Escalation
 If a proposed feature conflicts with a principle, stop feature work, document an exception with rationale, safeguards, owner and rollback, and request approval.

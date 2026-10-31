@@ -61,7 +61,7 @@ class ParsedProxyTest {
         });
     server.start();
     String base = "http://127.0.0.1:" + server.getAddress().getPort();
-    proxy = new ParsedProxy(identity, temp.resolve("private.pem").toString(), base, base);
+    proxy = new ParsedProxy(identity,new dev.atlaslab.workspace.application.WorkspaceCases(new dev.atlaslab.workspace.adapters.out.HttpAssetGateway(temp.resolve("private.pem").toString(),base,base,false,true)));
   }
 
   @AfterEach

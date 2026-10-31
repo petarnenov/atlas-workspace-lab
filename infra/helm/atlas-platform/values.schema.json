@@ -94,7 +94,10 @@
         "api-identity",
         "asset-runtime",
         "worker-runtime",
-        "parser-access"
+        "parser-access",
+        "artifact-owner",
+        "artifact-writer",
+        "artifact-storage-bootstrap"
       ],
       "properties": {
         "postgres-admin": {
@@ -117,6 +120,15 @@
         },
         "parser-access": {
           "const": "parser-access"
+        },
+        "artifact-owner": {
+          "const": "artifact-owner"
+        },
+        "artifact-writer": {
+          "const": "artifact-writer"
+        },
+        "artifact-storage-bootstrap": {
+          "const": "artifact-storage-bootstrap"
         }
       }
     },
