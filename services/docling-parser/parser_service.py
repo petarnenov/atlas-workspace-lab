@@ -32,11 +32,18 @@ class ParserServer(ThreadingHTTPServer):
     daemon_threads = True
     request_queue_size = 8
 
-    def __init__(self, address, token, runner=run_conversion):
+    def __init__(self, address, token, runner=run_conversion, *, converter=None):
         if not token or len(token) < 32:
             raise ValueError('Dedicated parser credential required')
         self.token = token
         self.runner = runner
+        # Trusted startup wiring; HTTP handlers only invoke bound capabilities.
+        if converter is None:
+            converter = IsolatedConverter(lambda *args, **kwargs: self.runner(*args, **kwargs))
+        if not callable(getattr(converter, 'convert', None)):
+            raise ValueError('A converter capability is required')
+        self.application = ParseDocument(converter)
+        self.legacy_document = getattr(converter, 'legacy', None)
         self.capacity = threading.BoundedSemaphore(1)
         self.ready = False
         super().__init__(address, Handler)
@@ -100,10 +107,11 @@ class Handler(BaseHTTPRequestHandler):
             data = self.rfile.read(length)
             if len(data) != length or not data.startswith(b'%PDF-'):
                 return self.reply(400)
-            adapter = IsolatedConverter(self.server.runner)
             if self.path == '/internal/v1/parse':
-                return self.reply(200, adapter.legacy(data))
-            result = ParseDocument(adapter).parse(data)
+                if not callable(self.server.legacy_document):
+                    raise Unavailable()
+                return self.reply(200, self.server.legacy_document(data))
+            result = self.server.application.parse(data)
             payload = dict(sourceSha256=result.source_hash, pageCount=result.pages,
                            document=dict(schemaVersion='1', markdown=result.markdown),
                            provenance=dict(converter=result.converter_revision,

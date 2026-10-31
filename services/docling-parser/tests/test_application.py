@@ -48,3 +48,32 @@ def test_neutral_http_and_opaque_optional_native(server):
     assert result['document']==dict(schemaVersion='1',markdown='synthetic')
     assert result['native']['mediaType']=='application/json'
     assert 'parserVersion' not in result
+
+
+def test_http_invokes_startup_selected_converter_without_concrete_binding():
+    import threading
+    import parser_service as service
+    from test_service import TOKEN
+
+    class Alternate:
+        def convert(self, data):
+            assert data == PDF
+            return output()
+
+    converter = Alternate()
+    instance = service.ParserServer(('127.0.0.1', 0), TOKEN, converter=converter)
+    instance.ready = True
+    thread = threading.Thread(target=instance.serve_forever, daemon=True)
+    thread.start()
+    try:
+        assert instance.application.converter is converter
+        status, result = request(instance, path='/internal/v2/parse')
+        assert status == 200
+        assert result['document'] == dict(schemaVersion='1', markdown='synthetic')
+        assert 'native' not in result
+        assert request(instance, path='/internal/v1/parse')[0] == 503
+    finally:
+        instance.shutdown()
+        instance.server_close()
+    with pytest.raises(ValueError, match='converter'):
+        service.ParserServer(('127.0.0.1', 0), TOKEN, converter=object())
