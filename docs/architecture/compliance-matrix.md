@@ -28,6 +28,7 @@ in [delivery evidence](../implementation/LAB-101-EVIDENCE.md). No production com
 | P21 | Deferred | No inference/scoring implemented |
 
 ## Mandatory review artifacts
+- Applicable accepted/proposed ADRs and explicit dependency/substitution evidence
 - Issue link and exact OpenSpec proposal revision approved by a human
 - Affected components and explicit scope exclusions
 - API/event contract version and compatibility evidence
@@ -65,3 +66,16 @@ runtime tests; two stateless replicas are explicitly not an HA claim. P20 pins
 Helm/checksums and immutable images and requires explicit compatible rollback.
 P01/P04/P11/P13/P14/P21 remain deferred AI guardrails; no model features are added.
 CI and human review remain mandatory before merge.
+
+## LAB-106 architectural gap / LAB-107 proposed correction
+
+LAB-106 passed behavioral, security and deployment checks but did not demonstrate
+hexagonal/microkernel replaceability. WorkerEvents depends on ParserClient;
+Checkpoints accepts ParserClient.Parsed and stores document bodies; ParsedHttp
+reads SQL directly; the parser contract and client require Docling schema/version.
+These remain known debt, not accepted proof of architectural compliance.
+
+LAB-107 proposes ADR-0001/0002 and executable source/contract checks with explicit,
+reviewed, time-bounded baseline debt. Documentation and checker design are revision
+1 proposals; tooling and runtime remediation are not implemented by these docs.
+No whole-repository compliance claim is justified by a passing future ratchet gate.

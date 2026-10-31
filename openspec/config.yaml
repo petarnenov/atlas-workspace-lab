@@ -5,10 +5,17 @@ context: |
   Python only in services/docling-parser and its tests/build under approved LAB-106 exception. Generic asset workflow and synthetic data only.
   Implementation requires human-approved proposal, design, specs and tasks.
   Independent service ownership and versioned API/event contracts.
+  Read docs/architecture/adr/README.md; follow accepted ADRs and identify proposed decisions requiring exact approval.
+  LAB-107 proposes hexagonal/microkernel boundaries and replaceable parser/artifact storage. Do not claim existing LAB-106 complies.
 rules:
   proposal:
     - Include issue reference, affected components and out-of-scope items.
   design:
     - Document service boundaries, API/event impacts and failure/security cases.
+    - Identify applicable ADRs, application-owned ports/types, dependency direction and bootstrap bindings.
+    - Prove parser/storage substitution without use-case source changes; distinguish deployment independence from replaceability.
+    - Compare storage alternatives, identify lifecycle owner, and document cross-store consistency, fencing, orphan cleanup and rollback.
+    - Explicitly record debt and exceptions; approval and coverage do not waive architecture.
   tasks:
     - Include tests, quality gates and PR evidence.
+    - Include dependency-boundary checks, shared adapter contract tests and actual substitution evidence.

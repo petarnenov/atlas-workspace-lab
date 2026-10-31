@@ -9,6 +9,11 @@
 - Contracts changed:
 
 ## Architecture compliance
+- Applicable ADRs, exact revision and approval status:
+- Application-owned ports/types, dependency direction and bootstrap bindings:
+- Parser/store substitution evidence (independent deploy alone is insufficient):
+- Content/metadata/checkpoint ownership and consistency/recovery:
+- Existing debt, baseline changes, owner and review date:
 - Applicable principles (P01–P21):
 - Architecture exception or approval (if any):
 - Compliance matrix updated:
