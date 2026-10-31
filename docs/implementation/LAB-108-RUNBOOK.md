@@ -54,7 +54,10 @@ is not permission for new portable executions to write there.
 
 The `ParsedArtifacts` application is tested with an in-memory store/catalog and
 with the real JDBC/RustFS adapters. The processing kernel is tested with alternate
-parser, source, execution and completion implementations. Provider replacement
+parser, source, execution and completion implementations. A separate test-only
+worker harness consumes/publishes the real versioned Kafka contracts against the
+original services and checks stage retries, identity, stale completion and neutral
+reads. Its volatile ledger is not a replacement production execution engine. Provider replacement
 still requires the replacement to satisfy the versioned wire contract and the
 same security/quality bounds. Independent deployment alone proves neither.
 

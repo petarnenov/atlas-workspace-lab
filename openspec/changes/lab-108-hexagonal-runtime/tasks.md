@@ -24,7 +24,7 @@
       only after all findings are gone; run strict full audit and semantic review.
 - [ ] Run meaningful happy/failure unit, integration, adapter/consumer contracts,
       >=75% measured source coverage, dev Kubernetes E2E and security checks locally.
-- [ ] Verify independent build/deploy, parser three replicas, config-only substitution
+- [x] Verify independent build/deploy, parser three replicas, config-only substitution
       and original component images in worker black-box conformance tests.
 - [ ] Record actual evidence/runbook/compliance matrix and human review; integrate
       to dev, then run mandatory hosted promotion checks on dev-to-main PR.

@@ -65,7 +65,20 @@ completion, merge approval, migration cutover or production-readiness claim.
   Docling import or native JSON through unchanged worker, asset and BFF templates.
   It also runs pause/drain, snapshots, restore-check, repeated migration,
   checksum verification, rollback-copy and conservative reconciliation.
-  Final run outcome is reported with the clean candidate's CI/PR evidence.
+  The isolated full scenario passed in nine minutes; the final clean candidate
+  repeats it in aggregate CI.
+- Replacement worker black-box harness passed in 1.6 minutes against original
+  asset-service/BFF/parser images and unchanged templates. It consumes real uploaded
+  v1 in an independent Kafka group, calls the original parser, stages with the worker
+  identity, retries a lost acknowledgement byte-identically, rejects conflicting
+  stage bytes and stale completion, publishes the same processed v2 twice and
+  verifies one terminal asset version plus tenant-safe neutral reads. Its ledger
+  is deliberately volatile; normal worker SQL durability has separate restart tests.
+- Compose E2E: all seven passed on clean candidate `9d425c8`, including UI completion,
+  tenant/idempotency/refusal, duplicate/conflicting outcomes, worker restart,
+  storage outage and retained container recreation. Aggregate checks were stopped
+  during native image loading to include the additional worker harness in the
+  final candidate; this partial run is not reported as complete CI.
 - Real backup restore-check restored both owner databases and the RustFS volume
   into a separate randomly named Compose project, verified asset exports and
   stopped the disposable containers. Private restore markers were produced.
