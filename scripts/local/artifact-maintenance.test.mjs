@@ -13,18 +13,19 @@ test('conservative reconciliation retains committed, referenced, unknown and amb
  const ledger={tenantId:'t',assetId:'a',inputEventId:'e',sent:true,outcome:{outcome:'COMPLETED',artifactId:'winner'}};
  assert.equal(reconcile([manifest],[ledger])[0].decision,'CANDIDATE_ONLY_NO_DELETE');
  for(const rows of [[],[ledger,ledger],[{...ledger,sent:false}],[{...ledger,outcome:{outcome:'COMPLETED',artifactId:'orphan'}}]])assert.equal(reconcile([manifest],rows)[0].decision,'RETAIN_UNKNOWN_OR_REFERENCED');
- assert.equal(reconcile([{...manifest,state:'COMMITTED'}],[])[0].decision,'RETAIN_COMMITTED');assert.throws(()=>reconcile(Array(1001).fill(manifest),[]));
- assert.deepEqual(summary([copy]),summary([{...copy}]));assert.throws(()=>summary([{...copy,markdown:'changed'}]));
+ assert.equal(reconcile([{...manifest,state:'COMMITTED'}],[])[0].decision,'RETAIN_COMMITTED');assert.throws(()=>reconcile(Array(1001).fill(manifest),[]));let tick=0;assert.throws(()=>reconcile([manifest],[ledger],()=>tick++*61000),/deadline/);
+ assert.deepEqual(summary([copy]),summary([{...copy}]));assert.doesNotThrow(()=>summary([{...copy,nativeJson:undefined,nativeSha256:undefined}]));assert.throws(()=>summary([{...copy,markdown:'changed'}]));
 });
 test('paused owner processes snapshot, repeat migration, verify rollback and resume without cross-owner credentials',async()=>{
  const original=process.cwd(),dir=mkdtempSync(join(tmpdir(),'atlas-maintenance-'));const originalEnv=process.env.ENV;
  try {
   process.chdir(dir);process.env.ENV='dev';mkdirSync('.local/helm/dev',{recursive:true});writeFileSync('.local/helm/dev/credentials.json',JSON.stringify({OBJECT_ADMIN:'a'.repeat(48),ASSET_DB:'asset-secret-fixture',WORKER_DB:'worker-secret-fixture'}));
-  const calls=[];let closed=0,corrupt=false;
+  const calls=[];let closed=0,corrupt=false;const replicas={'workspace-api':1,'processing-worker':1,'asset-service':1};
   const fixture=(file,owner,rows)=>writeFileSync(file,JSON.stringify({schemaVersion:'1',owner,rows}));
   const deps={runtime:{context:'kind-atlas-test',guard:()=>{},kubectlTool:'synthetic-kubectl',root:'.local/k8s'},release:{directory:()=>'.local/helm/dev',assertNamespace:()=>{},assertCredentials:()=>{},kube:(_env,args)=>{
    calls.push(args);
-   if(args[0]==='get')return JSON.stringify({items:['workspace-api','processing-worker','asset-service'].map(name=>({metadata:{name},spec:{replicas:1}}))});
+   if(args[0]==='get')return JSON.stringify({items:Object.keys(replicas).map(name=>({metadata:{name},spec:{replicas:replicas[name]}}))});
+   if(args[0]==='scale')replicas[args[1].slice('deployment/'.length)]=Number(args[2].split('=')[1]);
    if(args.includes('psql'))return '0';if(args.includes('sh'))return '-- synthetic owner dump';return '';
   }},openForward:async()=>({port:12345,close:()=>closed++}),start:(_command,_args,options)=>{
    writeFileSync(options.stdio[1],'synthetic storage snapshot');const child=new EventEmitter();queueMicrotask(()=>child.emit('exit',0));return child;

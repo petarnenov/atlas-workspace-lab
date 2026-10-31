@@ -48,9 +48,9 @@ public class ObjectsStore implements AutoCloseable {
   public byte[] get(String key) throws IOException {
     try (ResponseInputStream<GetObjectResponse> in =
         client.getObject(GetObjectRequest.builder().bucket(BUCKET).key(key).build())) {
-      byte[] bytes = in.readNBytes(MAX_BYTES + 1);
-      if (bytes.length > MAX_BYTES) throw new IOException("Object too large");
-      return bytes;
+      try { return dev.atlaslab.demo.adapters.out.BoundedRead.read(in,MAX_BYTES,Duration.ofSeconds(8)); }
+      catch(IOException unavailable) {throw unavailable;}
+      catch(Exception unavailable) {throw new IOException("Object unavailable");}
     }
   }
 

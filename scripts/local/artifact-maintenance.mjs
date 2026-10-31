@@ -6,12 +6,13 @@ import {createHash} from 'node:crypto';
 import * as helm from '../helm/runtime.mjs';
 import * as native from '../k8s/runtime.mjs';
 import {artifactPassword} from './artifact-credentials.mjs';
+import {fileHash,restoreCheck} from './restore-check.mjs';
 
-export function reconcile(manifests,ledger) {
+export function reconcile(manifests,ledger,now=Date.now) {
  if(manifests.length>1000||ledger.length>1000)throw Error('Maintenance batch exceeds 1000');
- const deadline=Date.now()+60000;
+ const deadline=now()+60000;
  return manifests.map(item=>{
-  if(Date.now()>deadline)throw Error('Reconciliation deadline exceeded');
+  if(now()>deadline)throw Error('Reconciliation deadline exceeded');
   const candidates=ledger.filter(row=>row.tenantId===item.tenant_id&&row.assetId===item.asset_id&&row.inputEventId===item.input_event_id);
   const known=candidates.length===1&&candidates[0].sent===true&&['COMPLETED','FAILED'].includes(candidates[0].outcome?.outcome);
   const referenced=ledger.some(row=>row.outcome?.artifactId===item.artifact_id);
@@ -22,7 +23,7 @@ export function summary(rows) {
  const tenants={};
  for(const row of rows) {
   const digest=value=>value==null?null:createHash('sha256').update(value).digest('hex');
-  if(digest(row.markdown)!==row.markdownSha256||digest(row.nativeJson)!==row.nativeSha256)throw Error('Archive content checksum mismatch');
+  if(digest(row.markdown)!==row.markdownSha256||digest(row.nativeJson)!==(row.nativeSha256??null))throw Error('Archive content checksum mismatch');
   (tenants[row.tenantId]??=[]).push([row.assetId,row.inputEventId,row.sourceSha256,row.markdownSha256,row.nativeSha256,row.converter,row.pipeline,row.pageCount]);
  }
  return Object.fromEntries(Object.entries(tenants).sort().map(([tenant,values])=>[tenant,{count:values.length,sha256:createHash('sha256').update(JSON.stringify(values.sort((a,b)=>a[0].localeCompare(b[0])))).digest('hex')}]));
@@ -48,7 +49,7 @@ function execute(command,args,env) {
 }
 export async function main(action,{runtime=native,release=helm,openForward=forward,runProcess=execute,start=spawn}={}) {
  if((process.env.ENV??'dev')!=='dev')throw Error('Maintenance is dev-only');
- if(!['pause','snapshot','migrate','verify','rollback-copy','reconcile','resume'].includes(action))throw Error('Unknown maintenance action');
+ if(!['pause','snapshot','migrate','verify','rollback-copy','reconcile','restore-check','resume'].includes(action))throw Error('Unknown maintenance action');
  runtime.guard();release.assertNamespace('dev');release.assertCredentials('dev');
  const root=resolve(`${runtime.runtimeRoot??'.local'}/maintenance`);mkdirSync(root,{recursive:true,mode:0o700});
  const stateFile=`${root}/window.json`;
@@ -83,15 +84,17 @@ export async function main(action,{runtime=native,release=helm,openForward=forwa
   const {renameSync}=await import('node:fs');renameSync(stateFile,`${directory}/closed-window.json`);return;
  }
  if(state.phase!=='DRAINED')throw Error('Drain incomplete; inspect failures or run make artifacts-resume');
+ const deployments=JSON.parse(kube(['get','deployments','-o','json'],{quiet:true})).items;
+ if(Object.keys(state.replicas).some(name=>{const deployment=deployments.find(d=>d.metadata.name===name);return !deployment||deployment.spec.replicas!==0||Number(deployment.status?.replicas??0)!==0;}))throw Error('Maintenance writers are running; pause and drain again');
  const pg=await openForward('postgres',5432);let storage;
  try {storage=await openForward('storage',9000);}catch(error){pg.close();throw error;}
  try {
   const credentials=JSON.parse(readFileSync(`${release.directory('dev')}/credentials.json`,'utf8'));
   const common={PATH:process.env.PATH,JAVA_HOME:process.env.JAVA_HOME,HOME:process.env.HOME,ENV:'dev',ATLAS_MAINTENANCE_PAUSED:'1'};
-  const owner=async(component,operation,file)=>{
+  const owner=async(component,operation,file,overrides={})=>{
    const worker=component==='processing-worker';
    const env=worker?{...common,WORKER_DB_URL:`jdbc:postgresql://localhost:${pg.port}/worker_checkpoint`,LAB_WORKER_DB_PASSWORD:credentials.WORKER_DB}:{...common,ASSET_DB_URL:`jdbc:postgresql://localhost:${pg.port}/assets`,LAB_ASSET_DB_PASSWORD:credentials.ASSET_DB,LAB_OBJECT_ENDPOINT:`http://localhost:${storage.port}`,LAB_ARTIFACT_OBJECT_PASSWORD:artifactPassword(credentials.OBJECT_ADMIN)};
-   await runProcess('./gradlew',[`:${component}:maintenance`,`-PmaintenanceAction=${operation}`,`-PmaintenanceFile=${file}`,'--no-daemon'],env);
+   await runProcess('./gradlew',[`:${component}:maintenance`,`-PmaintenanceAction=${operation}`,`-PmaintenanceFile=${file}`,'--no-daemon'],{...env,...overrides});
   };
   const workerExport=`${directory}/worker-copies.json`,assetExport=`${directory}/asset-copies-${Date.now()}.json`;
   if(action==='snapshot') {
@@ -105,9 +108,16 @@ export async function main(action,{runtime=native,release=helm,openForward=forwa
    try {await new Promise((ok,fail)=>{const child=start(runtime.kubectlTool,tarArgs,{stdio:['ignore',fd,'pipe']});child.once('error',fail);child.once('exit',code=>code===0?ok():fail(Error('Storage snapshot failed')));});} finally {closeSync(fd);}
    await owner('processing-worker','snapshot',`${directory}/worker-ledger.json`);await owner('asset-service','snapshot',`${directory}/asset-manifests.json`);
    await owner('processing-worker','export',workerExport);
-   writeFileSync(`${directory}/snapshot-ready.json`,JSON.stringify({context:runtime.context,createdAt:new Date().toISOString(),worker:summary(exchange(workerExport,'worker-copies'))}),{mode:0o600,flag:'wx'});
+   await owner('asset-service','export',`${directory}/asset-copies-snapshot.json`);
+   const files={};for(const file of ['assets.sql','worker_checkpoint.sql','storage.tar','asset-copies-snapshot.json'])files[file]=await fileHash(`${directory}/${file}`);
+   writeFileSync(`${directory}/snapshot-ready.json`,JSON.stringify({context:runtime.context,createdAt:new Date().toISOString(),files,worker:summary(exchange(workerExport,'worker-copies'))}),{mode:0o600,flag:'wx'});
   } else {
    if(!existsSync(`${directory}/snapshot-ready.json`))throw Error('A complete DB/object/ledger snapshot is required');
+   if(action==='restore-check') {
+    const restored=await restoreCheck(directory,credentials,owner);
+    if(JSON.stringify(summary(exchange(restored.exported,'asset-copies')))!==JSON.stringify(summary(exchange(`${directory}/asset-copies-snapshot.json`,'asset-copies'))))throw Error('Restored backup content differs');
+    writeFileSync(`${directory}/restore-verified-${Date.now()}.json`,JSON.stringify({context:runtime.context,project:restored.project,verified:true}),{mode:0o600});
+   }
    if(action==='migrate')await owner('asset-service','import',workerExport);
    if(['migrate','verify','rollback-copy'].includes(action)) {
     await owner('asset-service','export',assetExport);

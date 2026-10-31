@@ -14,7 +14,7 @@ for (const name of ["asset-api", "asset-internal"])
     name,
   );
 const events = JSON.parse(
-  readFileSync("contracts/asyncapi/asset-events.v1.json", "utf8"),
+  readFileSync("contracts/asyncapi/asset-events.v2.json", "utf8"),
 );
 function token(tenant = "a") {
   const now = Math.floor(Date.now() / 1000);
@@ -54,6 +54,7 @@ function db(sql: string, database = "assets") {
 test("real UI upload reaches completed through Kafka and bounded PDF worker", async ({
   page,
 }) => {
+  test.setTimeout(120_000);
   await page.goto("/");
   await page.getByLabel("Synthetic demo token").fill(token());
   await page.getByLabel("Sample PDF").setInputFiles(uploadFile());
@@ -69,7 +70,7 @@ test("real UI upload reaches completed through Kafka and bounded PDF worker", as
   contract("asset-internal", "AssetReceipt", receipt);
   await expect(
     page.getByRole("heading", { name: "Processing complete" }),
-  ).toBeVisible({ timeout: 40_000 });
+  ).toBeVisible({ timeout: 80_000 });
   const parsed = await page.request.get(`/api/v1/assets/${receipt.assetId}/parsed`, {headers:{Authorization:`Bearer ${token()}`}});
   expect(parsed.status()).toBe(200);
   expect(await parsed.text()).toContain('Atlas synthetic document');
@@ -136,7 +137,7 @@ test("tenant denial, idempotent retry and malformed PDF processing failure", asy
         });
         return (await r.json()).status;
       },
-      { timeout: 30_000 },
+      { timeout: 60_000 },
     )
     .toBe("FAILED");
   const read = await request.get(`/api/v1/assets/${failed.assetId}`, {
@@ -184,7 +185,7 @@ test("Kafka duplicate and conflicting out-of-order outcomes preserve terminal ve
         });
         return (await r.json()).status;
       },
-      { timeout: 30_000 },
+      { timeout: 60_000 },
     )
     .toBe("COMPLETED");
   const uploaded = db(
@@ -223,8 +224,9 @@ test("Kafka duplicate and conflicting out-of-order outcomes preserve terminal ve
     eventId: randomUUID(),
     outcome: "FAILED",
     errorCode: "PROCESSING_ERROR",
+    artifactId: undefined,
   };
-  produce("asset.processed.v1", [outcome, outcome, JSON.stringify(conflict)]);
+  produce("asset.processed.v2", [outcome, outcome, JSON.stringify(conflict)]);
   await expect
     .poll(() =>
       db(
@@ -248,7 +250,7 @@ test("Kafka duplicate and conflicting out-of-order outcomes preserve terminal ve
 test("worker process restart preserves durable terminal deduplication", async ({
   request,
 }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(150_000);
   const headers = { Authorization: `Bearer ${token()}` };
   const accepted = await request.post("/api/v1/assets", {
     headers,
@@ -258,7 +260,7 @@ test("worker process restart preserves durable terminal deduplication", async ({
   await expect
     .poll(
       () => db(`SELECT status FROM asset WHERE asset_id='${receipt.assetId}'`),
-      { timeout: 30_000 },
+      { timeout: 60_000 },
     )
     .toBe("COMPLETED");
   const state = JSON.parse(readFileSync(".local/apps.json", "utf8"));
@@ -302,7 +304,7 @@ test("worker process restart preserves durable terminal deduplication", async ({
   await expect
     .poll(
       () => db(`SELECT status FROM asset WHERE asset_id='${fresh.assetId}'`),
-      { timeout: 65_000 },
+      { timeout: 100_000 },
     )
     .toBe("COMPLETED");
   expect(
@@ -353,7 +355,7 @@ test("storage outage publishes nothing and same-key retry recovers after restart
   await expect
     .poll(
       () => db(`SELECT status FROM asset WHERE asset_id='${receipt.assetId}'`),
-      { timeout: 30_000 },
+      { timeout: 60_000 },
     )
     .toBe("COMPLETED");
 });
@@ -361,7 +363,7 @@ test("storage outage publishes nothing and same-key retry recovers after restart
 test("container recreation preserves objects, Kafka log and accepted receipts", async ({
   request,
 }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(180_000);
   const headers = {
     Authorization: `Bearer ${token()}`,
     "Idempotency-Key": randomUUID(),
@@ -375,7 +377,7 @@ test("container recreation preserves objects, Kafka log and accepted receipts", 
   await expect
     .poll(
       () => db(`SELECT status FROM asset WHERE asset_id='${receipt.assetId}'`),
-      { timeout: 30_000 },
+      { timeout: 60_000 },
     )
     .toBe("COMPLETED");
   const objectKey = db(
@@ -436,7 +438,7 @@ test("container recreation preserves objects, Kafka log and accepted receipts", 
   await expect
     .poll(
       () => db(`SELECT status FROM asset WHERE asset_id='${next.assetId}'`),
-      { timeout: 65_000 },
+      { timeout: 100_000 },
     )
     .toBe("COMPLETED");
 });

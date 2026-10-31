@@ -41,6 +41,13 @@ sequenceDiagram
   A->>A: Atomically commit manifest, asset and dedup
 ```
 
+A consumer handler/database/content-verification failure stops that Kafka listener
+without acknowledging the input. This retains the existing fail-closed policy:
+repair the dependency, then explicitly restart the affected service to redeliver.
+It is not automatic consumer recovery. Worker processing/publication retries are
+separate bounded ledger operations; never edit offsets or publish a new event ID
+as a recovery shortcut.
+
 New normal execution stores no document bodies in the worker ledger. Legacy
 `parsed_document` remains for compatibility and verified rollback; its presence
 is not permission for new portable executions to write there.
@@ -105,6 +112,7 @@ the owner process that needs them, never through command arguments.
 ```sh
 make artifacts-pause ENV=dev
 make artifacts-snapshot ENV=dev
+make artifacts-restore-check ENV=dev # restore DB/object snapshots into a separate Compose project
 make artifacts-migrate ENV=dev
 make artifacts-migrate ENV=dev       # prove repeatability
 make artifacts-verify ENV=dev
@@ -133,8 +141,10 @@ asset metadata, verifies stored bytes and commits manifests idempotently. Failed
 or conflicting rows stop verification and remain in the private export for
 investigation. Per-tenant source/content/provenance checksums must agree.
 
-Before cutover, test restoration of the private DB dumps and object tar into a
-separate disposable environment, then verify owner exports there. Keep original
+Before cutover, run `make artifacts-restore-check ENV=dev`. It verifies snapshot
+file hashes, restores both databases and the object tar into a separate Compose
+project on allocated loopback ports, verifies owner exports there and stops its
+containers while retaining volumes for inspection. Keep original
 copies and snapshots until review completes. The snapshot command creates the
 backup; it does not itself prove restoration.
 

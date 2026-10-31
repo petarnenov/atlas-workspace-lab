@@ -516,6 +516,29 @@ export function buildParser() {
   loadImages([tag]);
   return tag;
 }
+export function buildComponent(name) {
+  if(!['workspace-api','asset-service','processing-worker','portal-ui','docling-parser'].includes(name))throw Error('Unknown application component');
+  if(name==='docling-parser')return buildParser();
+  guard();execute('make',['component-build',`SERVICE=${name}`]);
+  const dest=`${root}/build/${name}`;
+  mkdirSync(dest,{recursive:true,mode:0o700});
+  if(name==='portal-ui') {
+    cpSync('infra/k8s/images/UI.Dockerfile',`${dest}/Dockerfile`);
+    cpSync('infra/k8s/images/nginx.conf',`${dest}/nginx.conf`);
+    cpSync('apps/portal-ui/dist',`${dest}/dist`,{recursive:true});
+  } else {
+    cpSync('infra/k8s/images/Java.Dockerfile',`${dest}/Dockerfile`);
+    for(const file of ['WorkerReady.java','NetworkCheck.java'])cpSync(`infra/k8s/images/${file}`,`${dest}/${file}`);
+    cpSync(`${name==='processing-worker'?'workers':'services'}/${name}/build/libs/${name}-0.1.0-SNAPSHOT.jar`,`${dest}/app.jar`);
+    mkdirSync(`${dest}/runtime`,{recursive:true});
+    if(name==='processing-worker')cpSync(`workers/${name}/build/libs/${name}-0.1.0-SNAPSHOT-parser.jar`,`${dest}/runtime/parser.jar`);
+  }
+  const temporary=`atlas/${name}:candidate`;
+  execute('docker',['build','--provenance=false','-t',temporary,dest]);
+  const id=execute('docker',['image','inspect',temporary,'--format','{{.Id}}'],{quiet:true}).trim();
+  const tag=`atlas/${name}:${id.replace('sha256:','')}`;
+  execute('docker',['tag',temporary,tag]);loadImages([tag]);return tag;
+}
 export function loadImages(images, run = execute) {
   const architecture = run(
     "docker",

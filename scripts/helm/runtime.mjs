@@ -261,9 +261,8 @@ export function build(env, service = process.env.SERVICE) {
   assertCredentials(env);
   if (service) {
     component(service);
-    if (service !== "docling-parser") throw Error("Independent build currently supports SERVICE=docling-parser; omit SERVICE for all images");
     const inventory = images(env);
-    inventory[service] = native.buildParser();
+    inventory[service] = native.buildComponent(service);
     writeFileSync(directory(env)+"/images.json",JSON.stringify(inventory,null,2)+"\n",{mode:0o600});
     return;
   }

@@ -9,6 +9,7 @@ ci-policy-test: ## Verify hosted workflows accept only dev-to-main promotion
 contracts-validate: ## Validate all OpenAPI/AsyncAPI versions with authoritative validators
 	pnpm exec node scripts/validate-asyncapi.mjs
 	npx --yes @redocly/cli@2.72.1 lint contracts/openapi/*.json --extends=spec
+	node --test scripts/validate-asyncapi.test.mjs
 TENANT ?= a
 export TENANT
 .PHONY: help doctor setup prepare up stop status apps dev ui token build build-ui test test-tools test-java test-frontend test-integration test-e2e check check-scaffold check-architecture check-contracts graph affected-build affected-test measure-builds install-trivy security
@@ -48,6 +49,8 @@ test: ## Run parser, tooling, Java, frontend, integration and E2E sequentially
 	$(MAKE) test-integration
 	$(MAKE) test-e2e
 test-tools: ## Test Make helpers with measured coverage gates
+	node --test --experimental-test-coverage --test-coverage-include='scripts/local/restore-check.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/local/restore-check.test.mjs
+	node --test --experimental-test-coverage --test-coverage-include='scripts/local/build-component.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/local/build-component.test.mjs
 	node --test --experimental-test-coverage --test-coverage-include='scripts/local/artifact-maintenance.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/local/artifact-maintenance.test.mjs
 	node --test --experimental-test-coverage --test-coverage-include='scripts/local/artifact-credentials.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/local/artifact-credentials.test.mjs
 	node --test --experimental-test-coverage --test-coverage-include='scripts/local/parsed-copy.mjs' --test-coverage-include='scripts/local/parser-credentials.mjs' --test-coverage-include='scripts/local/parser-forward.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/local/parsed-copy.test.mjs scripts/local/parser-forward.test.mjs
@@ -117,7 +120,7 @@ k8s-token: ## Generate Kubernetes synthetic token (TENANT=a or b)
 	@node scripts/k8s/runtime.mjs token
 k8s-test: ## Run Kubernetes tooling checks and real cluster E2E/failure tests
 	./gradlew :processing-worker:k8sProbeCheck --no-daemon
-	node --test --experimental-test-coverage --test-coverage-include='scripts/k8s/*.mjs' --test-coverage-exclude='scripts/k8s/*.test.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/k8s/runtime.test.mjs
+	env -u ATLAS_CLUSTER -u ATLAS_RUNTIME_ROOT node --test --experimental-test-coverage --test-coverage-include='scripts/k8s/*.mjs' --test-coverage-exclude='scripts/k8s/*.test.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/k8s/runtime.test.mjs
 	pnpm exec playwright test --config playwright.k8s.config.ts
 k8s-security: ## Scan Kubernetes manifests and all loaded workload images
 	node scripts/k8s/security.mjs
@@ -159,10 +162,10 @@ helm-stop: ## Stop selected environment, preserving releases, Secrets and PVCs
 helm-rollback: ## Roll back one compatible app release (SERVICE=... REVISION=...)
 	node scripts/helm/runtime.mjs rollback
 helm-test: ## Run Helm helper coverage, chart checks and real two-environment E2E
-	node --test --experimental-test-coverage --test-coverage-include='scripts/helm/*.mjs' --test-coverage-exclude='scripts/helm/*.test.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/helm/runtime.test.mjs
+	env -u ATLAS_CLUSTER -u ATLAS_RUNTIME_ROOT node --test --experimental-test-coverage --test-coverage-include='scripts/helm/*.mjs' --test-coverage-exclude='scripts/helm/*.test.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/helm/runtime.test.mjs
 	pnpm exec playwright test --config playwright.helm.config.ts
 helm-test-dev: ## Run local Helm helper and dev-only runtime tests
-	node --test --experimental-test-coverage --test-coverage-include='scripts/helm/*.mjs' --test-coverage-exclude='scripts/helm/*.test.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/helm/runtime.test.mjs
+	env -u ATLAS_CLUSTER -u ATLAS_RUNTIME_ROOT node --test --experimental-test-coverage --test-coverage-include='scripts/helm/*.mjs' --test-coverage-exclude='scripts/helm/*.test.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/helm/runtime.test.mjs
 	ATLAS_HELM_TEST_ENV=dev pnpm exec playwright test --config playwright.helm.config.ts
 helm-security: ## Scan charts, rendered profiles and their deployed images
 	node scripts/helm/security.mjs
@@ -197,3 +200,15 @@ artifacts-reconcile: ## Bounded reference reconciliation, dry-run only; never de
 	node scripts/local/artifact-maintenance.mjs reconcile
 artifacts-resume: ## Restore recorded dev replicas after reviewed maintenance
 	node scripts/local/artifact-maintenance.mjs resume
+
+.PHONY: component-build
+component-build: ## Independently assemble exactly one application (SERVICE=processing-worker)
+	node scripts/local/build-component.mjs
+
+.PHONY: artifacts-restore-check
+artifacts-restore-check: ## Restore DB/object backups into isolated disposable Compose containers and verify copies
+	node scripts/local/artifact-maintenance.mjs restore-check
+
+.PHONY: build-boundaries
+build-boundaries: ## Verify Nx affected build boundaries without rebuilding unrelated services
+	node scripts/local/measure-builds.mjs --check-only

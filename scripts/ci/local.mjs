@@ -6,9 +6,9 @@ export function plan(env='dev') {
   if(env!=='dev')throw Error('Local development checks require ENV=dev');
   return [
     ['setup'],['check'],['architecture-test'],['ci-policy-test'],['contracts-validate'],
-    ['test-tools'],['test-java'],['build-ui'],['test-frontend'],['parser-test'],
-    ['up'],['test-integration'],['test-e2e'],['install-trivy'],['security'],
-    ['k8s-tools'],['k8s-setup'],['k8s-build'],['k8s-up'],['k8s-test'],['k8s-security'],
+    ['test-tools'],['test-java'],['build-ui'],['build-boundaries'],['test-frontend'],['parser-test'],
+    ['up'],['test-integration'],['test-e2e'],['install-trivy'],['security'],['stop'],
+    ['k8s-tools'],['k8s-setup'],['k8s-build'],['k8s-up'],['k8s-test'],['k8s-security'],['k8s-stop'],
     ['helm-tools'],['helm-setup'],['helm-build'],['helm-lint'],['helm-up'],
     ['helm-test-dev'],['helm-security-dev'],
   ].map(args=>[...args,'ENV=dev']);

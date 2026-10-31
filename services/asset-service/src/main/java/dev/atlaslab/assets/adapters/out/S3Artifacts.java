@@ -38,7 +38,7 @@ public final class S3Artifacts implements ArtifactStore,AutoCloseable {
   }
   public byte[] read(Ref ref) {
     try(var stream=client.getObject(GetObjectRequest.builder().bucket(BUCKET).key(key(ref)).build())) {
-      byte[] bytes=stream.readNBytes(10*1024*1024+1);
+      byte[] bytes=dev.atlaslab.demo.adapters.out.BoundedRead.read(stream,10*1024*1024,Duration.ofSeconds(8));
       if(bytes.length>10*1024*1024)throw new Failure(Failure.Kind.UNAVAILABLE);
       return bytes;
     } catch(Exception unavailable) { throw new Failure(Failure.Kind.UNAVAILABLE); }
