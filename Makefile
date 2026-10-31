@@ -48,6 +48,8 @@ test: ## Run parser, tooling, Java, frontend, integration and E2E sequentially
 	$(MAKE) test-integration
 	$(MAKE) test-e2e
 test-tools: ## Test Make helpers with measured coverage gates
+	node --test --experimental-test-coverage --test-coverage-include='scripts/local/artifact-maintenance.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/local/artifact-maintenance.test.mjs
+	node --test --experimental-test-coverage --test-coverage-include='scripts/local/artifact-credentials.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/local/artifact-credentials.test.mjs
 	node --test --experimental-test-coverage --test-coverage-include='scripts/local/parsed-copy.mjs' --test-coverage-include='scripts/local/parser-credentials.mjs' --test-coverage-include='scripts/local/parser-forward.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/local/parsed-copy.test.mjs scripts/local/parser-forward.test.mjs
 	node --test --experimental-test-coverage --test-coverage-include='scripts/local/make-tools.mjs' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=75 scripts/local/make-tools.test.mjs
 test-java: ## Run Java unit tests
@@ -169,11 +171,29 @@ helm-security-dev: ## Scan only the local dev profile, images and repository
 
 FORMAT ?= markdown
 export ASSET_ID FORMAT
-.PHONY: parsed-copy parser-build parser-test
-parsed-copy: ## Show authorized saved parsed PDF (ENV=dev ASSET_ID=uuid FORMAT=markdown|json TENANT=a|b)
+.PHONY: parsed-copy parsed-copy-legacy parser-build parser-test
+parsed-copy-legacy: ## Show legacy native parsed JSON (same authorization)
+	@PARSED_API_VERSION=1 FORMAT=json node scripts/local/parsed-copy.mjs
+parsed-copy: ## Show authorized neutral saved parsed PDF (ENV=dev ASSET_ID=uuid FORMAT=markdown|json TENANT=a|b)
 	@node scripts/local/parsed-copy.mjs
 parser-build: ## Build independently deployable locked offline Docling image
 	docker build --provenance=false -t atlas/docling-parser:candidate services/docling-parser
 parser-test: ## Run parser unit/quality checks and measured Python coverage in container
 	docker build --target test -t atlas/docling-parser:test services/docling-parser
 	docker run --rm --network=none atlas/docling-parser:test
+
+.PHONY: artifacts-pause artifacts-snapshot artifacts-migrate artifacts-verify artifacts-rollback-copy artifacts-reconcile artifacts-resume
+artifacts-pause: ## Dev maintenance: pause uploads, drain publications and stop writers
+	node scripts/local/artifact-maintenance.mjs pause
+artifacts-snapshot: ## Save private restorable DB/object snapshots and owner exports
+	node scripts/local/artifact-maintenance.mjs snapshot
+artifacts-migrate: ## Import verified legacy copies through the asset owner (idempotent)
+	node scripts/local/artifact-maintenance.mjs migrate
+artifacts-verify: ## Verify historical per-tenant counts/checksums through owner exports
+	node scripts/local/artifact-maintenance.mjs verify
+artifacts-rollback-copy: ## Restore and verify old worker reader copies including new writes
+	node scripts/local/artifact-maintenance.mjs rollback-copy
+artifacts-reconcile: ## Bounded reference reconciliation, dry-run only; never deletes
+	node scripts/local/artifact-maintenance.mjs reconcile
+artifacts-resume: ## Restore recorded dev replicas after reviewed maintenance
+	node scripts/local/artifact-maintenance.mjs resume

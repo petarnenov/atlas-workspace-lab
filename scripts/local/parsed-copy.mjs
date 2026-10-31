@@ -3,13 +3,14 @@ import { spawn } from 'node:child_process';
 import { directory, environment } from '../helm/runtime.mjs';
 import { token, guard, kubectlTool, root, context } from '../k8s/runtime.mjs';
 
-export function argumentsFor(env, id, format = 'markdown', tenant = 'a') {
+export function argumentsFor(env, id, format = 'markdown', tenant = 'a', version = '2') {
   environment(env);
   if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(id ?? ''))
     throw Error('ASSET_ID must be a canonical UUID');
   if (!['markdown', 'json'].includes(format)) throw Error('FORMAT must be markdown or json');
   if (!['a', 'b'].includes(tenant)) throw Error('TENANT must be a or b');
-  return `/api/v1/assets/${id}/parsed?format=${format}`;
+  if (!['1','2'].includes(version)) throw Error('PARSED_API_VERSION must be 1 or 2');
+  return `/api/v${version}/assets/${id}/parsed?format=${format}`;
 }
 
 export function forward(env, start = spawn, check = guard, timeout = 15000) {
@@ -29,7 +30,7 @@ export function forward(env, start = spawn, check = guard, timeout = 15000) {
 export async function main(env=process.env.ENV ?? 'dev', id=process.env.ASSET_ID,
   format=process.env.FORMAT ?? 'markdown', tenant=process.env.TENANT ?? 'a',
   dependencies={forward,issue:token,request:fetch,write:text=>process.stdout.write(text)}) {
-  const path = argumentsFor(env,id,format,tenant);
+  const path = argumentsFor(env,id,format,tenant,process.env.PARSED_API_VERSION ?? '2');
   const connection = dependencies.forward(env);
   try {
     const port = await connection.ready;

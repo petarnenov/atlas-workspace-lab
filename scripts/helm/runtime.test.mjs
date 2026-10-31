@@ -191,8 +191,8 @@ else if(name==='trivy'&&args.includes('--output'))fs.writeFileSync(args[args.ind
               const c = item.spec.template.spec.containers[i],
                 previous = old.spec.template.spec.containers[i];
               assert.deepEqual(c.securityContext, previous.securityContext);
-              assert.deepEqual(c.env, previous.env);
-              assert.deepEqual(c.volumeMounts, previous.volumeMounts);
+              assert.deepEqual([...c.env ?? []].sort((a,b)=>a.name.localeCompare(b.name)), [...previous.env ?? []].sort((a,b)=>a.name.localeCompare(b.name)));
+              assert.deepEqual([...c.volumeMounts ?? []].sort((a,b)=>a.name.localeCompare(b.name)), [...previous.volumeMounts ?? []].sort((a,b)=>a.name.localeCompare(b.name)));
               assert.deepEqual(c.readinessProbe, previous.readinessProbe);
             }
           }

@@ -52,7 +52,11 @@ export function inspectSource(path,source,role,adapterTypes=[]) {
   for(const line of code.split('\n')) {
     if(core && /\b(?:org\.springframework|java\.sql|javax\.sql|java\.net\.http|java\.nio\.file|software\.amazon|com\.fasterxml|docling(?:\.|\b)|sqlite3|boto3|requests|httpx)\b|\.adapters\./.test(line)) emit('CORE_INFRA_DEPENDENCY',line,offset);
     if(core && /\b(?:ParserClient|ObjectsStore|DoclingDocument|DocumentConverter|S3Client|JdbcTemplate|TransactionTemplate|HttpClient|Files|Path)\b/.test(line)) emit('CORE_CONCRETE_PROVIDER',line,offset);
-    if(core && adapterTypes.some(type=>new RegExp('\\b'+type.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b').test(line))) emit('CORE_ADAPTER_TYPE',line,offset);
+    if(core && adapterTypes.some(type=>{
+      const module=type.startsWith('module:');
+      const name=(module?type.slice(7):type).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      return new RegExp(module?'\\b(?:from|import)\\s+'+name+'\\b':'\\b'+name+'\\b').test(line);
+    })) emit('CORE_ADAPTER_TYPE',line,offset);
     if((core||role==='inbound') && /\.\s*(?:query|queryForList|queryForMap|queryForObject|update|execute|executeWithoutResult)\s*\(/.test(line)) emit('PERSISTENCE_IN_POLICY_OR_INBOUND',line,offset);
     if(core && /\b(?:if|switch)\s*\(.*(?:[Dd]ocling|[Ss]3|[Pp]ostgres)/.test(line)) emit('PROVIDER_BRANCH',line,offset);
     offset+=line.length+1;
@@ -78,7 +82,11 @@ export function inventory(root,policy) {
   for(const path of [...policy.roots,...Object.keys(policy.files),...policy.providerContracts]) if(!existsSync(resolve(root,path))) throw Error('Missing declared path: '+path);
   const sources=[...new Set(policy.roots.flatMap(path=>walk(root,path)))].sort();
   for(const path of Object.keys(policy.files)) if(!sources.includes(path)) throw Error('Declared source outside roots: '+path);
-  const adapterTypes=sources.filter(path=>['inbound','outbound','bootstrap'].includes(roleFor(path,policy))).map(path=>basename(path).replace(/\.(java|py)$/,''));
+  const adapterTypes=sources.filter(path=>['inbound','outbound','bootstrap'].includes(roleFor(path,policy))).flatMap(path=>{
+    if(path.endsWith('.java'))return [basename(path).replace(/\.java$/,'')];
+    const code=lex(readFileSync(resolve(root,path),'utf8'),true).code;
+    return ['module:'+basename(path).replace(/\.py$/,''),...[...code.matchAll(/\bclass\s+(\w+)/g)].map(match=>match[1])];
+  });
   const output=sources.flatMap(path=>inspectSource(path,readFileSync(resolve(root,path),'utf8'),roleFor(path,policy),adapterTypes));
   for(const path of readdirSync(resolve(root,'contracts/openapi')).filter(p=>p.endsWith('.json')).sort()) {
     const file='contracts/openapi/'+path;

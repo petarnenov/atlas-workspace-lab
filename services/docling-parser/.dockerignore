@@ -9,3 +9,7 @@
 !tests/
 !tests/**
 !stdio_bridge.py
+!application/
+!application/**
+!adapters/
+!adapters/**

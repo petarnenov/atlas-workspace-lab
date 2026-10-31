@@ -50,7 +50,7 @@
               "/bin/sh",
               "/bootstrap.sh"
             ],
-            "envFrom": [
+            "envFrom": [{"secretRef":{"name":{{ index .Values.secretRefs "artifact-storage-bootstrap" | toJson }}}},
               {
                 "secretRef": {
                   "name": {{ index .Values.secretRefs "storage-bootstrap" | toJson }}

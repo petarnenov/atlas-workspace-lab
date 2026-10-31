@@ -319,7 +319,7 @@ export function manifests() {
     },
     object("v1", "ConfigMap", "storage-policies", {
       data: Object.fromEntries(
-        ["asset.json", "worker.json"].map((file) => [
+        ["asset.json", "worker.json", "artifact.json"].map((file) => [
           file,
           readFileSync(`infra/storage/${file}`, "utf8"),
         ]),
@@ -418,7 +418,7 @@ export function manifests() {
     job("kafka-init", "atlas/kafka:build", [
       "/bin/sh",
       "-ec",
-      'for topic in asset.uploaded.v1 asset.processed.v1; do /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --create --if-not-exists --topic "$topic" --partitions 1 --replication-factor 1 --config retention.ms=604800000; done',
+      'for topic in asset.uploaded.v1 asset.processed.v1 asset.processed.v2; do /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --create --if-not-exists --topic "$topic" --partitions 1 --replication-factor 1 --config retention.ms=604800000; done',
     ]),
     job(
       "storage-init",
@@ -499,6 +499,7 @@ export function manifests() {
     ...allow("worker-parser", "processing-worker", "docling-parser", 8083),
     ...allow("api-worker", "workspace-api", "processing-worker", 8082),
     ...allow("api-assets", "workspace-api", "asset-service", 8081),
+    ...allow("worker-artifacts", "processing-worker", "asset-service", 8081),
     ...["asset-service", "processing-worker"].flatMap((from) =>
       [
         ["postgres", 5432],
@@ -526,6 +527,19 @@ export function manifests() {
       c.livenessProbe = {...http("/health/live",8083),failureThreshold:12};
       pod.volumes[0].emptyDir.sizeLimit = "256Mi";
     }
+  }
+  const storageBootstrap=items.find(item=>item.kind==='Job'&&item.metadata.name==='storage-init');
+  storageBootstrap.spec.template.spec.containers[0].envFrom.push({secretRef:{name:'artifact-storage-bootstrap'}});
+  for(const name of ['workspace-api','asset-service','processing-worker']) {
+    const pod=items.find(item=>item.kind==='Deployment'&&item.metadata.name===name).spec.template.spec;
+    pod.containers[0].env.push({name:'LAB_ARTIFACT_ENABLED',value:'true'});
+    if(name==='workspace-api')continue;
+    const owner=name==='asset-service';
+    pod.volumes.push({name:'artifact-keys',secret:{secretName:owner?'artifact-owner':'artifact-writer',defaultMode:288,items:[{key:owner?'worker-public.pem':'worker-private.pem',path:owner?'worker-public.pem':'worker-private.pem'}]}});
+    pod.containers[0].volumeMounts.push({name:'artifact-keys',mountPath:'/artifact-keys',readOnly:true});
+    if(owner) {
+      pod.containers[0].env.push(secretEnv('LAB_ARTIFACT_OBJECT_PASSWORD','LAB_ARTIFACT_OBJECT_PASSWORD','artifact-owner'),{name:'LAB_WORKER_PUBLIC_KEY',value:'/artifact-keys/worker-public.pem'});
+    } else pod.containers[0].env.push({name:'LAB_WORKER_PRIVATE_KEY',value:'/artifact-keys/worker-private.pem'},{name:'LAB_ARTIFACT_URL',value:'http://asset-service:8081'});
   }
   const ui = items.find(
     (x) => x.kind === "Deployment" && x.metadata.name === "portal-ui",

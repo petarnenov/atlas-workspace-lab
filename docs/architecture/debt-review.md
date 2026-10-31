@@ -1,3 +1,19 @@
+# LAB-108 refactoring status
+
+The current strict static inventory is empty. The baseline contains no accepted
+violations; the historical pending inventory below is retained for traceability,
+not grandfathered. Runtime integration, security, migration, substitution and
+human review evidence are still required before declaring LAB-108 complete.
+
+Layer corrections accompany actual extraction: Identity is a JWT/crypto adapter,
+Wire a JSON transport codec, Checkpoints a JDBC ledger, and WorkerEvents a thin
+listener/scheduler over ProcessingKernel. Asset upload/outcome/delivery decisions
+moved behind typed application-owned ports. These are not blanket legacy exemptions.
+Python module imports/classes are checked separately from calls to a converter
+port; invoking `converter.convert` does not import the adapter module `convert`.
+
+## Historical LAB-107 inventory (before refactoring)
+
 # Initial debt inventory — pending owner review
 
 148 findings (122 exact rule/path/fragment entries).

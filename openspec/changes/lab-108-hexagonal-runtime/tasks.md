@@ -5,19 +5,19 @@
 - [x] Record requested worktree/dev/promotion-only CI policy in proposed ADR-0003.
 - [x] Obtain exact revision 1 approval, record commit/owner/date and ADR status.
 - [ ] Review/integrate LAB-107 governance into dev; preserve pending debt visibility.
-- [ ] Encode and validate reviewed OpenAPI/AsyncAPI shapes before runtime changes.
-- [ ] Add source/trigger tests and local Make CI-equivalent entrypoint; update all
+- [x] Encode and validate reviewed OpenAPI/AsyncAPI shapes before runtime changes.
+- [x] Add source/trigger tests and local Make CI-equivalent entrypoint; update all
       five workflows for promotion-only policy, preserving required gate semantics.
-- [ ] Extract shared identity/upload/event values from transport/crypto/JSON code.
-- [ ] Extract asset upload/query/outcome applications and persistence/source ports;
+- [x] Extract shared identity/upload/event values from transport/crypto/JSON code.
+- [x] Extract asset upload/query/outcome applications and persistence/source ports;
       prove original idempotency, intent, compensation and dedup failure behavior.
-- [ ] Extract worker application/kernel and execution/publication/sandbox/source ports;
+- [x] Extract worker application/kernel and execution/publication/sandbox/source ports;
       preserve lease/fence/retries/cancellation and stable durable outcomes.
-- [ ] Isolate Docling conversion adapter; add neutral parser v2 and substitution tests.
+- [x] Isolate Docling conversion adapter; add neutral parser v2 and substitution tests.
 - [ ] Implement asset-owned ArtifactStore/manifests/staging and scoped identities;
       test real RustFS, corruption, cross-tenant denial and lost acknowledgements.
 - [ ] Add processed v2 consumer first, then worker publisher; prove crash recovery.
-- [ ] Add v2 reads, v1 compatibility, BFF routing and Make inspection commands.
+- [x] Add v2 reads, v1 compatibility, BFF routing and Make inspection commands.
 - [ ] Implement dev-only migration, snapshots/export/import verification and bounded
       dry-run reconciliation; prove repeatability and rollback including new writes.
 - [ ] Remove obsolete concrete code; update exact file roles, empty debt baseline

@@ -28,7 +28,7 @@ class ProcessingWorkerApplicationTest {
   void setup() {
     var ds =
         new DriverManagerDataSource(
-            "jdbc:postgresql://localhost:5432/worker_checkpoint",
+            System.getenv().getOrDefault("WORKER_DB_URL","jdbc:postgresql://localhost:5432/worker_checkpoint"),
             "worker_owner",
             System.getenv("LAB_WORKER_DB_PASSWORD"));
     new ResourceDatabasePopulator(new ClassPathResource("schema.sql")).execute(ds);
@@ -41,13 +41,11 @@ class ProcessingWorkerApplicationTest {
     parser = mock(ParserClient.class);
     try {
       when(parser.parse(any()))
-          .thenReturn(
-              new ParserClient.Parsed(
-                  "0".repeat(64), "2.145.0", ParserClient.PIPELINE, 1, "Synthetic", "{}"));
+          .thenAnswer(invocation -> new dev.atlaslab.worker.domain.WorkModel.Parsed(PdfUpload.digest(invocation.getArgument(0)),"fixture-converter","fixture-pipeline",1,"Synthetic","{}"));
     } catch (Exception e) {
       throw new AssertionError(e);
     }
-    events = new WorkerEvents(checkpoints, store, sandbox, parser, kafka);
+    events = dev.atlaslab.worker.bootstrap.WorkerAssembly.create(checkpoints, store, sandbox, parser, kafka);
     when(kafka.send(anyString(), anyString(), anyString()))
         .thenReturn(CompletableFuture.completedFuture(null));
   }
@@ -68,7 +66,7 @@ class ProcessingWorkerApplicationTest {
     assertEquals(1, db.queryForObject("SELECT count(*) FROM checkpoint", Integer.class));
     // New repository/scanner instances simulate loss of all in-memory processing state.
     var restarted = new Checkpoints(db, new DataSourceTransactionManager(db.getDataSource()));
-    var worker = new WorkerEvents(restarted, store, sandbox, parser, kafka);
+    var worker = dev.atlaslab.worker.bootstrap.WorkerAssembly.create(restarted, store, sandbox, parser, kafka);
     when(store.get(e.objectKey())).thenReturn("synthetic".getBytes());
     worker.process();
     String outcome = db.queryForObject("SELECT outcome FROM checkpoint", String.class);
@@ -166,7 +164,7 @@ class ProcessingWorkerApplicationTest {
   void databasePrivilegeBoundary() {
     var denied =
         new DriverManagerDataSource(
-            "jdbc:postgresql://localhost:5432/assets",
+            System.getenv().getOrDefault("ASSET_DB_URL","jdbc:postgresql://localhost:5432/assets"),
             "worker_owner",
             System.getenv("LAB_WORKER_DB_PASSWORD"));
     assertThrows(Exception.class, denied::getConnection);
@@ -182,7 +180,7 @@ class ProcessingWorkerApplicationTest {
     assertFalse(checkpoints.renew(stale));
     var current = checkpoints.claim();
     var parsed =
-        new ParserClient.Parsed("0".repeat(64), "2.145.0", ParserClient.PIPELINE, 1, "Saved", "{}");
+        new dev.atlaslab.worker.domain.WorkModel.Parsed("0".repeat(64), "2.145.0", "fixture-pipeline", 1, "Saved", "{}");
     assertFalse(checkpoints.finishParsed(stale, e, parsed));
     assertEquals(0, db.queryForObject("SELECT count(*) FROM parsed_document", Integer.class));
     assertTrue(checkpoints.finishParsed(current, e, parsed));
@@ -199,7 +197,7 @@ class ProcessingWorkerApplicationTest {
     var e = input();
     events.receive(Wire.json(e));
     when(store.get(e.objectKey())).thenReturn(new byte[] {1});
-    when(parser.parse(any())).thenThrow(new java.io.IOException("private"));
+    doThrow(new java.io.IOException("private")).when(parser).parse(any());
     events.process();
     assertNull(db.queryForObject("SELECT outcome FROM checkpoint", String.class));
     db.update("UPDATE checkpoint SET next_at=now()");
@@ -218,12 +216,33 @@ class ProcessingWorkerApplicationTest {
     events.receive(Wire.json(e));
     var lease = checkpoints.claim();
     var invalid =
-        new ParserClient.Parsed(
-            "0".repeat(64), "2.145.0", ParserClient.PIPELINE, 99, "Saved", "{}");
+        new dev.atlaslab.worker.domain.WorkModel.Parsed(
+            "0".repeat(64), "2.145.0", "fixture-pipeline", 99, "Saved", "{}");
     assertThrows(
         org.springframework.dao.DataIntegrityViolationException.class,
         () -> checkpoints.finishParsed(lease, e, invalid));
     assertNull(db.queryForObject("SELECT outcome FROM checkpoint", String.class));
     assertEquals(0, db.queryForObject("SELECT count(*) FROM parsed_document", Integer.class));
+  }
+  @org.junit.jupiter.api.io.TempDir java.nio.file.Path historyDirectory;
+  @Test void ownerRollbackRestoresNewV2CopiesWithoutReparsingAndRejectsUnsupportedResults() throws Exception {
+    var input=input();checkpoints.accept(Wire.json(input));var lease=checkpoints.claim();
+    String artifact=UUID.randomUUID().toString();
+    assertTrue(checkpoints.finishV2(lease,input,artifact,null));checkpoints.sent(input.eventId());
+    String nativeJson="{ \"native\": true }\n",markdown="Saved without reparsing";
+    var copy=new dev.atlaslab.demo.adapters.out.MaintenanceFiles.Copy(input.tenantId(),input.assetId(),input.eventId(),input.correlationId(),"a".repeat(64),"alternate","plain",1,1,artifact,markdown,nativeJson,dev.atlaslab.demo.adapters.out.MaintenanceFiles.hash(markdown),dev.atlaslab.demo.adapters.out.MaintenanceFiles.hash(nativeJson));
+    var file=historyDirectory.resolve("asset.json");dev.atlaslab.demo.adapters.out.MaintenanceFiles.write(file,"asset-copies",List.of(copy));
+    var env=new HashMap<>(System.getenv());env.put("ENV","dev");env.put("ATLAS_MAINTENANCE_PAUSED","1");
+    for(int i=0;i<2;i++)dev.atlaslab.worker.bootstrap.WorkerMaintenance.run(new String[]{"restore",file.toString()},env);
+    assertEquals(1,db.queryForObject("SELECT count(*) FROM parsed_document",Integer.class));assertEquals(nativeJson,db.queryForObject("SELECT document FROM parsed_document",String.class));
+    var exported=historyDirectory.resolve("worker.json");dev.atlaslab.worker.bootstrap.WorkerMaintenance.run(new String[]{"export",exported.toString()},env);
+    assertEquals(markdown,dev.atlaslab.demo.adapters.out.MaintenanceFiles.copy(dev.atlaslab.demo.adapters.out.MaintenanceFiles.read(exported,"worker-copies").get(0)).markdown());
+    dev.atlaslab.worker.bootstrap.WorkerMaintenance.run(new String[]{"snapshot",historyDirectory.resolve("ledger.json").toString()},env);
+    var noNative=new dev.atlaslab.worker.ports.LegacyHistory.Copy(input.tenantId(),input.assetId(),input.eventId(),input.correlationId(),"a".repeat(64),"alternate","plain",1,1,artifact,markdown,null);
+    var ds=new DriverManagerDataSource(System.getenv().getOrDefault("WORKER_DB_URL","jdbc:postgresql://localhost:5432/worker_checkpoint"),"worker_owner",System.getenv("LAB_WORKER_DB_PASSWORD"));
+    var history=new dev.atlaslab.worker.adapters.out.JdbcHistory(db,new DataSourceTransactionManager(ds));var app=new dev.atlaslab.worker.application.HistoryMigration(history);
+    assertThrows(IllegalStateException.class,()->app.restore(List.of(noNative)));
+    db.update("UPDATE checkpoint SET sent=false");assertThrows(IllegalStateException.class,app::export);
+    assertThrows(IllegalArgumentException.class,()->dev.atlaslab.worker.bootstrap.WorkerMaintenance.run(new String[]{"unknown","unused"},env));
   }
 }

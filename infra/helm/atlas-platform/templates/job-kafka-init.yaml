@@ -49,7 +49,7 @@
             "command": [
               "/bin/sh",
               "-ec",
-              "for topic in asset.uploaded.v1 asset.processed.v1; do /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --create --if-not-exists --topic \"$topic\" --partitions 1 --replication-factor 1 --config retention.ms=604800000; done"
+              "for topic in asset.uploaded.v1 asset.processed.v1 asset.processed.v2; do /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --create --if-not-exists --topic \"$topic\" --partitions 1 --replication-factor 1 --config retention.ms=604800000; done"
             ],
             "envFrom": [],
             "resources": {

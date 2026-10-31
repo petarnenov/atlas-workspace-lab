@@ -1,5 +1,4 @@
 """Narrow, authenticated PDF endpoint. No URLs, storage, DB or plugin inputs."""
-import hashlib
 import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -8,9 +7,10 @@ from pathlib import Path
 import signal
 import subprocess
 import sys
-import tempfile
 import threading
 import uuid
+from application.document import ParseDocument, Rejected, TooLarge, Unavailable
+from adapters.out.isolated import IsolatedConverter
 
 MAX_INPUT = 5 * 1024 * 1024
 MAX_OUTPUT = 10 * 1024 * 1024
@@ -53,7 +53,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def reply(self, status, data=None):
         data = data if data is not None else {'code': 'REJECTED', 'correlationId': str(uuid.uuid4())}
-        encoded = json.dumps(data).encode()
+        encoded = json.dumps(data, ensure_ascii=False).encode()
+        if status == 200 and len(encoded) > MAX_OUTPUT:
+            return self.reply(413)
         self.send_response(status)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Cache-Control', 'no-store')
@@ -75,7 +77,7 @@ class Handler(BaseHTTPRequestHandler):
             self.reply(404)
 
     def do_POST(self):
-        if self.path != '/internal/v1/parse':
+        if self.path not in ('/internal/v1/parse', '/internal/v2/parse'):
             return self.reply(404)
         expected = ('Bearer ' + self.server.token).encode()
         if not hmac.compare_digest(self.headers.get('Authorization', '').encode(), expected):
@@ -98,18 +100,23 @@ class Handler(BaseHTTPRequestHandler):
             data = self.rfile.read(length)
             if len(data) != length or not data.startswith(b'%PDF-'):
                 return self.reply(400)
-            with tempfile.TemporaryDirectory(prefix='atlas-parse-') as directory:
-                source, target = Path(directory) / 'input.pdf', Path(directory) / 'output.json'
-                source.write_bytes(data)
-                code = self.server.runner([str(source), str(target)])
-                if code != 0:
-                    return self.reply({13: 413, 22: 422}.get(code, 503))
-                if target.stat().st_size > MAX_OUTPUT:
-                    return self.reply(413)
-                result = json.loads(target.read_bytes())
-                if result.get('sourceSha256') != hashlib.sha256(data).hexdigest():
-                    return self.reply(503)
-                return self.reply(200, result)
+            adapter = IsolatedConverter(self.server.runner)
+            if self.path == '/internal/v1/parse':
+                return self.reply(200, adapter.legacy(data))
+            result = ParseDocument(adapter).parse(data)
+            payload = dict(sourceSha256=result.source_hash, pageCount=result.pages,
+                           document=dict(schemaVersion='1', markdown=result.markdown),
+                           provenance=dict(converter=result.converter_revision,
+                                           pipeline=result.pipeline_revision))
+            if result.native is not None:
+                payload['native'] = dict(mediaType='application/json', content=result.native)
+            return self.reply(200, payload)
+        except TooLarge:
+            return self.reply(413)
+        except Rejected:
+            return self.reply(422)
+        except Unavailable:
+            return self.reply(503)
         except Exception:
             return self.reply(503)
         finally:

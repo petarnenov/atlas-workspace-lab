@@ -107,3 +107,21 @@ project(":processing-worker") {
         }
     }
 }
+
+// Owner-scoped operator processes; never start service listeners/schedulers during migration.
+for ((module, entry) in mapOf(
+    "asset-service" to "dev.atlaslab.assets.bootstrap.AssetMaintenance",
+    "processing-worker" to "dev.atlaslab.worker.bootstrap.WorkerMaintenance"
+)) {
+    project(":$module") {
+        tasks.register<JavaExec>("maintenance") {
+            dependsOn("classes")
+            classpath = project.extensions.getByType<SourceSetContainer>()["main"].runtimeClasspath
+            mainClass.set(entry)
+            doFirst {
+                args(project.findProperty("maintenanceAction") ?: error("maintenanceAction required"),
+                     project.findProperty("maintenanceFile") ?: error("maintenanceFile required"))
+            }
+        }
+    }
+}

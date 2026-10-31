@@ -1,6 +1,7 @@
 package dev.atlaslab.worker;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import dev.atlaslab.worker.domain.WorkModel.Parsed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.atlaslab.demo.PdfUpload;
 import java.net.URI;
@@ -12,24 +13,20 @@ import org.springframework.stereotype.Component;
 
 /** Restricted client: fixed endpoint, bounded bytes, no document-provided URLs/options. */
 @Component
-public class ParserClient {
+public class ParserClient implements dev.atlaslab.worker.ports.ProcessingPorts.DocumentParser {
   static final int MAX_OUTPUT = 10 * 1024 * 1024;
-  static final String PIPELINE = "atlas-pdf-v1-heron8f39ad3c-tablefc0f2d45-ocr-off";
   private final HttpClient http =
       HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
   private final URI endpoint;
   private final String tokenFile;
   private final ObjectMapper mapper = new ObjectMapper();
 
-  public record Parsed(
-      String hash, String version, String pipeline, int pages, String markdown, String document) {}
-
-  public static class Rejected extends Exception {}
+  public static class Rejected extends dev.atlaslab.worker.ports.ProcessingPorts.DocumentParser.Rejected {}
 
   public ParserClient(
       @Value("${lab.docling.url}") String url,
       @Value("${lab.docling.token-file}") String tokenFile) {
-    endpoint = URI.create(url + "/internal/v1/parse");
+    endpoint = URI.create(url + "/internal/v2/parse");
     this.tokenFile = tokenFile;
   }
 
@@ -68,25 +65,20 @@ public class ParserClient {
     try {
       JsonNode node = mapper.readTree(bytes);
       String hash = node.path("sourceSha256").asText();
-      String version = node.path("parserVersion").asText();
-      String pipeline = node.path("pipelineVersion").asText();
-      JsonNode doc = node.path("document");
-      int pages = node.path("pageCount").asInt();
-      String markdown = node.path("markdown").asText();
-      if (bytes.length > MAX_OUTPUT
-          || !PdfUpload.digest(pdf).equals(hash)
-          || !"2.145.0".equals(version)
-          || !PIPELINE.equals(pipeline)
-          || pages < 1
-          || pages > 20
-          || !node.path("pageCount").isIntegralNumber()
-          || !node.path("markdown").isTextual()
-          || markdown.isBlank()
-          || !doc.isObject()
-          || !"DoclingDocument".equals(doc.path("schema_name").asText())
-          || !doc.path("version").asText().matches("1\\.[0-9]+\\.[0-9]+")
-          || node.size() != 6) throw new Rejected();
-      return new Parsed(hash, version, pipeline, pages, markdown, mapper.writeValueAsString(doc));
+      JsonNode provenance=node.path("provenance"),doc=node.path("document");
+      String version=provenance.path("converter").asText(),pipeline=provenance.path("pipeline").asText();
+      int pages=node.path("pageCount").asInt();
+      String markdown=doc.path("markdown").asText();
+      JsonNode nativeArtifact=node.get("native");
+      if(bytes.length>MAX_OUTPUT||!PdfUpload.digest(pdf).equals(hash)||pages<1||pages>20
+          ||!node.path("pageCount").isIntegralNumber()||!doc.isObject()||doc.size()!=2
+          ||!doc.path("schemaVersion").isTextual()||!"1".equals(doc.path("schemaVersion").asText())||!doc.path("markdown").isTextual()||markdown.isBlank()
+          ||!provenance.isObject()||provenance.size()!=2||!provenance.path("converter").isTextual()
+          ||!provenance.path("pipeline").isTextual()||version.isBlank()||version.length()>128||pipeline.isBlank()||pipeline.length()>128
+          ||node.size()!=(nativeArtifact==null?4:5)
+          ||nativeArtifact!=null&&(!nativeArtifact.isObject()||nativeArtifact.size()!=2
+            ||!"application/json".equals(nativeArtifact.path("mediaType").asText())||!nativeArtifact.path("content").isObject()))throw new Rejected();
+      return new Parsed(hash,version,pipeline,pages,markdown,nativeArtifact==null?null:mapper.writeValueAsString(nativeArtifact.get("content")));
     } catch (Rejected rejected) {
       throw rejected;
     } catch (Exception invalid) {

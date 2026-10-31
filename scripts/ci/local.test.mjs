@@ -10,10 +10,11 @@ test('local plan includes quality, real-runtime and security gates in dev only',
 });
 test('check failures stop subsequent work and cannot produce complete evidence',()=>{
  const calls=[],reports=[];
- const execute=(cmd,args)=>{calls.push([cmd,args]);return cmd==='git'?{status:0,stdout:args[0]==='status'?' M changed\n':'abc\n'}:{status:1};};
+ const execute=(cmd,args)=>{calls.push([cmd,args]);return cmd==='git'?{status:0,stdout:args[0]==='status'?'':'abc\n'}:{status:1};};
  assert.throws(()=>run('dev',execute,(_path,value)=>reports.push(JSON.parse(value))));
  assert.equal(calls.filter(([cmd])=>cmd==='make').length,1);
- assert.equal(reports.at(-1).complete,false);assert.equal(reports.at(-1).dirty,true);
+ assert.equal(reports.at(-1).complete,false);assert.equal(reports.at(-1).dirty,false);
+ assert.throws(()=>run('dev',(_cmd,args)=>({status:0,stdout:args[0]==='status'?' M changed\n':'abc'}),()=>{}),/Commit/);
  assert.throws(()=>run('dev',()=>({status:1}),()=>{}));
 });
 test('success records every check and exact source identity',()=>{

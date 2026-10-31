@@ -288,7 +288,7 @@ else if(name==='javac')console.log('javac 21.0.1');else if(name==='pnpm')console
     r.reconcileSecrets(objects, (args) =>
       args[0] === "get" ? JSON.stringify({ items: [] }) : (writes++, ""),
     );
-    assert.equal(writes, 7);
+    assert.equal(writes, objects.length);
     assert.ok(r.token().split(".").length === 3);
     assert.ok(r.token("b"));
     assert.throws(() => r.token("other"));

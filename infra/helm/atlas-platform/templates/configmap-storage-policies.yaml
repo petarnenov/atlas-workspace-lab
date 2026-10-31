@@ -15,7 +15,7 @@
       "meta.helm.sh/release-namespace": {{ .Release.Namespace | toJson }}
     }
   },
-  "data": {
+  "data": {"artifact.json":"{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:PutObject\",\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::synthetic-derived/*\"]}]}\n",
     "asset.json": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:PutObject\",\"s3:GetObject\",\"s3:DeleteObject\"],\"Resource\":[\"arn:aws:s3:::synthetic-assets/*\"]}]}\n",
     "worker.json": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::synthetic-assets/*\"]}]}\n"
   }

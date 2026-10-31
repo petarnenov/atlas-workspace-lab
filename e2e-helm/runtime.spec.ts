@@ -15,7 +15,7 @@ const devOnly=process.env.ATLAS_HELM_TEST_ENV==='dev';
 const environments: readonly ('dev'|'prod')[]=devOnly?['dev']:['dev','prod'];
 for (const env of environments)
   test.describe(`${env} Helm demo`, () => {
-    test.use({ baseURL: `http://127.0.0.1:${env === "dev" ? 5173 : 5174}` });
+    test.use({ baseURL: `http://127.0.0.1:${env === "dev" ? Number(process.env.ATLAS_UI_PORT??5173) : 5174}` });
     const kubectl = (args: string[], options?: any) =>
       helmRuntime.kube(env, args, options);
     const token = (tenant = "a") =>
@@ -140,7 +140,11 @@ for (const env of environments)
       const forbidden = await request.get(`/api/v1/assets/${assetId}/parsed`,{headers:{Authorization:`Bearer ${token('b')}`}});
       expect(forbidden.status()).toBe(404);
       expect(execute("make",["parsed-copy",`ENV=${env}`,`ASSET_ID=${assetId}`],{quiet:true})).toContain("Atlas synthetic document");
-      expect(db(`SELECT count(*) FROM parsed_document WHERE asset_id='${assetId}'`,"worker_checkpoint")).toBe("1");
+      expect(db(`SELECT count(*) FROM parsed_document WHERE asset_id='${assetId}'`,"worker_checkpoint")).toBe("0");
+      expect(db(`SELECT count(*) FROM derived_artifact WHERE asset_id='${assetId}' AND state='COMMITTED'`)).toBe("1");
+      const neutral=await request.get(`/api/v2/assets/${assetId}/parsed?format=json`,{headers:{Authorization:`Bearer ${token()}`}});
+      expect(neutral.status()).toBe(200);
+      expect(await neutral.json()).toEqual({schemaVersion:"1",markdown:expect.stringContaining("Atlas synthetic document")});
     });
     test("parser deploy changes only its independent release", async () => {
       const before=JSON.parse(helmRuntime.helm(env,["list","-o","json"]));

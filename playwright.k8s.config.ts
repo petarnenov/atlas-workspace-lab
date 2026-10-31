@@ -4,10 +4,10 @@ export default defineConfig({
   workers: 1,
   timeout: 180_000,
   reporter: "list",
-  use: { baseURL: "http://127.0.0.1:5173", trace: "off", screenshot: "off" },
+  use: { baseURL: `http://127.0.0.1:${process.env.ATLAS_UI_PORT??5173}`, trace: "off", screenshot: "off" },
   webServer: {
     command: "node scripts/k8s/runtime.mjs forward",
-    url: "http://127.0.0.1:5173",
+    url: `http://127.0.0.1:${process.env.ATLAS_UI_PORT??5173}`,
     timeout: 30_000,
     reuseExistingServer: false,
   },
