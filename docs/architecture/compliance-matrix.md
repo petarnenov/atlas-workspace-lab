@@ -67,7 +67,7 @@ Helm/checksums and immutable images and requires explicit compatible rollback.
 P01/P04/P11/P13/P14/P21 remain deferred AI guardrails; no model features are added.
 CI and human review remain mandatory before merge.
 
-## LAB-106 architectural gap / LAB-107 proposed correction
+## LAB-106 architectural gap / LAB-107 guardrails
 
 LAB-106 passed behavioral, security and deployment checks but did not demonstrate
 hexagonal/microkernel replaceability. WorkerEvents depends on ParserClient;
@@ -75,7 +75,8 @@ Checkpoints accepts ParserClient.Parsed and stores document bodies; ParsedHttp
 reads SQL directly; the parser contract and client require Docling schema/version.
 These remain known debt, not accepted proof of architectural compliance.
 
-LAB-107 proposes ADR-0001/0002 and executable source/contract checks with explicit,
-reviewed, time-bounded baseline debt. Documentation and checker design are revision
-1 proposals; tooling and runtime remediation are not implemented by these docs.
+LAB-107 ADR-0001/0002 revision 1 is owner-approved, with minimal reusable
+contracts required. Source/contract checks and fixture tests are implemented;
+the initial exact debt inventory remains pending owner review. Runtime remediation
+is not implemented. The gate fails until the initial inventory is reviewed.
 No whole-repository compliance claim is justified by a passing future ratchet gate.

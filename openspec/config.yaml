@@ -6,7 +6,7 @@ context: |
   Implementation requires human-approved proposal, design, specs and tasks.
   Independent service ownership and versioned API/event contracts.
   Read docs/architecture/adr/README.md; follow accepted ADRs and identify proposed decisions requiring exact approval.
-  LAB-107 proposes hexagonal/microkernel boundaries and replaceable parser/artifact storage. Do not claim existing LAB-106 complies.
+  LAB-107 ADRs require hexagonal/microkernel boundaries, minimal reusable capability contracts and replaceable parser/artifact storage. Do not claim existing LAB-106 complies.
 rules:
   proposal:
     - Include issue reference, affected components and out-of-scope items.

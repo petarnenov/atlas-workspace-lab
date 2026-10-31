@@ -57,6 +57,15 @@ check-scaffold: ## Validate repository scaffold
 	pnpm check:scaffold
 check-architecture: ## Validate architecture boundaries
 	pnpm check:architecture
+.PHONY: architecture-check architecture-audit architecture-inventory architecture-test
+architecture-check: ## Reject new architectural debt; report reviewed existing debt
+	node scripts/check-architecture.mjs
+architecture-audit: ## Strict audit, fails on ALL remaining debt
+	node scripts/architecture-guardrails.mjs audit
+architecture-inventory: ## Print read-only findings (never accepts a baseline)
+	node scripts/architecture-guardrails.mjs inventory
+architecture-test: ## Test guardrails offline with source/branch coverage gates
+	node --test --experimental-test-coverage --test-coverage-include='scripts/architecture-guardrails.mjs' --test-coverage-lines=75 --test-coverage-branches=75 scripts/architecture-guardrails.test.mjs
 check-contracts: ## Validate versioned contracts
 	pnpm check:contracts
 graph: ## Open Nx project graph

@@ -2,9 +2,9 @@
 
 ## Approval and policy
 
-ADR-0001/0002 define the proposed target. The current user request authorizes
-preparing these documents; it is not recorded as approval of previously unseen
-text. Tool implementation starts after explicit approval of this exact revision.
+ADR-0001/0002 define the accepted target. Owner approved exact revision 1
+(f737615); see approval.md. Contracts must be minimal and reusable. The generated
+initial debt inventory still requires separate explicit owner review.
 
 Use Node 24 built-ins, no network/services. Preserve existing check-architecture
 rules and import the new checker. A versioned docs/architecture/policy.json defines

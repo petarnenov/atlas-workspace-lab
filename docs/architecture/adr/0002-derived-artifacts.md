@@ -1,6 +1,6 @@
 # ADR-0002 — Replaceable derived-artifact persistence
 
-Status: PROPOSED — revision 1; exact owner approval pending. Story: LAB-107.
+Status: ACCEPTED — revision 1, commit f737615; owner approval recorded in LAB-107 approval.md. Story: LAB-107.
 Depends on ADR-0001; applies P02/P03/P05–P10/P12/P15/P16/P18–P20.
 
 ## Context
@@ -53,3 +53,15 @@ idempotency, integrity and error contract tests. Test the real selected engine,
 crash-after-write, commit failure, stale lease, lost acknowledgement, missing/
 corrupt object, authorized reads and rollback. Preserve bounds and log redaction.
 Owner: repository owner. Review exact revision 1 and any ownership/security change.
+
+## Owner clarification: minimal reusable contracts
+
+Owner approved revision 1 and required minimal contracts for broad reuse. Include
+only fields/operations necessary for the capability and its safety guarantees.
+Keep provider options, deployment topology and transport types out of core ports.
+Keep provenance as generic metadata; do not make Docling/native output mandatory.
+Worker substitution must preserve events, identity, fencing/idempotency, retry and
+completion semantics, without changes to other components. Configuration/deployment
+and reviewed state migration may still be required. Breaking contract changes
+need compatibility/versioning review. Minimal does not remove tenant/integrity or
+failure semantics. This clarification does not authorize runtime contract changes.

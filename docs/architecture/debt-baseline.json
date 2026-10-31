@@ -1,0 +1,1226 @@
+{
+  "version": 1,
+  "approval": "pending",
+  "entries": [
+    {
+      "path": "libraries/demo-support/src/main/java/dev/atlaslab/demo/Identity.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "28cda63c901505ab72fbf4417f5ddea92c12fa66549b6a72036a82d5e387013c",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "libraries/demo-support/src/main/java/dev/atlaslab/demo/Identity.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "3cb02e11ca40dbd291e9ebfc6c5bd9dc1a7d614a5774e7fdd29949ef965407b2",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "libraries/demo-support/src/main/java/dev/atlaslab/demo/Identity.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "e2b6821ddd6085db3f19c28d14843bc566bb6172312ca38458cdd7559d339883",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "libraries/demo-support/src/main/java/dev/atlaslab/demo/PdfUpload.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "a19c1da57025c0057e1a9473008faeb0cfa7efd29317b4852def9eb6580294ec",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "libraries/demo-support/src/main/java/dev/atlaslab/demo/PdfUpload.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "a19c1da57025c0057e1a9473008faeb0cfa7efd29317b4852def9eb6580294ec",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "libraries/demo-support/src/main/java/dev/atlaslab/demo/PdfUpload.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "8507d020a7fca9423451f466b3ec498f894ba05ed2dcf44ed5a7a8cfa75c1592",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "libraries/demo-support/src/main/java/dev/atlaslab/demo/PdfUpload.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "1013c914614a20397bf88bd3e3e69cd2f400d77fb619929c6e173551879cacf0",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "libraries/demo-support/src/main/java/dev/atlaslab/demo/PdfUpload.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "998d659973cfd8a106e06f722f729638c32d1eb5568085154dafc621b523423f",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "libraries/demo-support/src/main/java/dev/atlaslab/demo/PdfUpload.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "375ba93c1722a84182f8f3645c8dd0120c9fdb3da85fd088c7fee938cf6cf1c7",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "libraries/demo-support/src/main/java/dev/atlaslab/demo/Wire.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "d29d5d823127efcab563df7f83540e3112a177ef4b532588246ae0b716bf0dc2",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "libraries/demo-support/src/main/java/dev/atlaslab/demo/Wire.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "1c750723d91a886364194bb8685d7949956da6968afe7e1f8d197b51c8fc5dff",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "libraries/demo-support/src/main/java/dev/atlaslab/demo/Wire.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "22f1f3991b1e23cbbb3034c43baf086f9e968d51b73e08521b60d23ce22ca2e5",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "cb33aca610ba3d53765f541bed5e4079ce1fe62a2b6b88be9371d7292d9c3801",
+      "count": 4,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "c56e18414ab74bd869e521c9c0a20dc7590430793230fe912f38754e11bd34df",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "10f94bf251cb326ab11a6507acfb5259372729a9bf0b595359194921714c2bc4",
+      "count": 5,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "4cfd1c8d04ec0ddce0142400659cdcb1872a7b4a370893da8d021b15b2991c23",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "7ff357c2908712664700014faba3828242362803f6c5c639ef4b297ea0463087",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "52f628f0bbda8aeffdcd8327a0ce579fff078404edf03884c93314b66db2dac3",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "6aae561a4329e1fbf229f8c8d94abdfc6ec2606d8001e7e5c4d293d74d7ddc72",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "0d3d69d4303551e7584c9a5ebb6dc8e0ce6347e02e93a8550f6d7835d5442971",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "366c32bd25cce1e6c25921a34a650fcd502690506f38cd9a288bc86e8041def8",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "60dced5940d42b6980430e1fb1ac6232aa76fea16e7803617e43ebee81bd922f",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "2e8532eef29997fe53648d05ceca190ae6d6be117d416935deed7d2356f7e811",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "cb3555d2a8f824fdbe0fa7cad883ddfbb548beee50ccc599d9f05cae44266654",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "277919598573ae248cf196a4a3e5462032e1dd676864756546650849183fb1e4",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "a007bca204c3976a370b47c878e761ca922f8fa3522f02478462a2a9f6774b6c",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "10c97c9dec7fd44f049eee3a716b78d87b86067d0d37cdb70b024409174e6999",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/AssetEvents.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "5a83b7794cea8455263e6d00aaa427ef8d1fb6d5b173a0137e140f75ae1ffcf8",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "2086706c43d3efd16d074cebca575da320de775a530fe86677a1b31b2538fafd",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "09af5d71ca4f2bbabdd9f100ca34eaedacc9bf1b1cecef58c72536b3d84d40a4",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "09af5d71ca4f2bbabdd9f100ca34eaedacc9bf1b1cecef58c72536b3d84d40a4",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "4b180c1eb268379c2a3d9b342e3a78eb46b808b6784f1ff165ce7814b8991b2c",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "311460a140ce98e7ea1a2f5ac6129e2ec9e2a4f03547c82d47fb3ee47f8b43bc",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "3228222c71df91efaf0b076d5c5c09e48df264c20791392762719c4df22e4713",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "3228222c71df91efaf0b076d5c5c09e48df264c20791392762719c4df22e4713",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "9aac0212368f2b0649a2112115b06e34c73ee4228056896c283d76dcfb80ef69",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "d8a900453bc746ae6022afb6d87b922528bfde44deb72cef0fd008c616cdb025",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "04dd9c2239682f59349adf4e15e06d57dd48ddbb31165bdb8a036eba63b3a3b6",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "04dd9c2239682f59349adf4e15e06d57dd48ddbb31165bdb8a036eba63b3a3b6",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "e3940ed1a96fe8c35f2e5b9c62e4c855a3beae74a59b4462620266ecacba8732",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "e3940ed1a96fe8c35f2e5b9c62e4c855a3beae74a59b4462620266ecacba8732",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "4f17548baf4e7943a8165d8e30a56e1a3c0cedef897a80edec77d768e53e2414",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "375ba93c1722a84182f8f3645c8dd0120c9fdb3da85fd088c7fee938cf6cf1c7",
+      "count": 2,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "c78c6098f13f180ab42bcbfa17a7c299148156aaa3039b0872b830838eaebb38",
+      "count": 2,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "7c945656af2dbb4fa4dd249c1deb60d6d3f49e727f5f25c01375ea8d4356a91b",
+      "count": 2,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "4068e2ea9aed5379637483d062aca7397597b450610a378a605a99d02aa5680d",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "6913379dae3769c2fa673e45a15f87fe880b8c37f0918576ffa6f2bfe3e270c3",
+      "count": 3,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "7dc23e510f39489d5fde5708a66aa1ba7f0dcec5eb60248f5d4406afb7cb921d",
+      "count": 6,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "33827d920fe4d130d368439b33b59a0094ed4cb75d66d4907358abe03fa2b244",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "ca88c7a24f9d092b62f1679b52d742bd53c0615f9b385dd002b00feeee1325f2",
+      "count": 2,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "5f4ad57f5b164bc29cd4e6ce8957c791c2216d428eb9a6ccd5efabc4b88fd121",
+      "count": 2,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "e68a35a0c3ec27cd79ecd99985995f8888e36d0162401b27ef63599d81cfbebd",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "bed4993e6ce6ccd43d90a84739e6e7af5c6b78a70ad3b123eb7024e7b87a935a",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "afdcd5686f14fb7cec41a52bab7dd406f38d8773883efda10e1544b928493e45",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "9f71e40a332e30e60ea30fef75e291890c83b824fdabbdf94c8bc50e77e83a3d",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "956303e0d9e8c1ed8e145085b2eb169defc04b6bf0a3cd071aa88d6109fe2f28",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "c047da732e0bec2f38af1a0ab05f7f6865ac00a7dd888674f40eef0d45110e2f",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "158bbdc0b470a1f0d6fe4d2dfbfaa548a9134550797c762abf894360275b1e46",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "37955ea289b9c2f19310a98def3fcc41a0b067ec35f87c5619554d00d2d048e8",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "730b3bd497cae0634519fe641f80f1fe73eef90474c177c63bb406c0837856f2",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "b6483e10c81d504069ccfa8562e9da70ad8930ad9911c62371ccd45bf70f2a48",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "841698bfa2b9bde2aef427535769db92c2b6adaad4711f63894145953642ad7f",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "10c97c9dec7fd44f049eee3a716b78d87b86067d0d37cdb70b024409174e6999",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "5a83b7794cea8455263e6d00aaa427ef8d1fb6d5b173a0137e140f75ae1ffcf8",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "8ab490ab8d13f656e4b8c63f98aef94bc8956ef76ba4d0f69e88e3e74c4d0623",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "8634d46b0d078872a5751649e191365e2849f0f91326f281cad8671262d27279",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "117d44875979e210facec4574a5f7589acefa7e158830b1f894cba92d66691e3",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "19d272f594b396dde961f4dd9786922b78af5a491803504504317cde3bab7b11",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "28cae6af681fdc4a2ce0ac25235d0c2b8c7f7cda15b781b9587ba07a768826c4",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "services/asset-service/src/main/java/dev/atlaslab/assets/Assets.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "a3f56521123dba0ee71f7f6a7a4c1470aef11d05af4d4b11fd59dbe8333cfca3",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "09af5d71ca4f2bbabdd9f100ca34eaedacc9bf1b1cecef58c72536b3d84d40a4",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "09af5d71ca4f2bbabdd9f100ca34eaedacc9bf1b1cecef58c72536b3d84d40a4",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "4b180c1eb268379c2a3d9b342e3a78eb46b808b6784f1ff165ce7814b8991b2c",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "311460a140ce98e7ea1a2f5ac6129e2ec9e2a4f03547c82d47fb3ee47f8b43bc",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "3228222c71df91efaf0b076d5c5c09e48df264c20791392762719c4df22e4713",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "3228222c71df91efaf0b076d5c5c09e48df264c20791392762719c4df22e4713",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "9aac0212368f2b0649a2112115b06e34c73ee4228056896c283d76dcfb80ef69",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "d8a900453bc746ae6022afb6d87b922528bfde44deb72cef0fd008c616cdb025",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "1dd20004d195729c8319b72f4bb3fe6b0cb0efe7dfff44efd9ded9f8689971f8",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "4f17548baf4e7943a8165d8e30a56e1a3c0cedef897a80edec77d768e53e2414",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "6913379dae3769c2fa673e45a15f87fe880b8c37f0918576ffa6f2bfe3e270c3",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "7dc23e510f39489d5fde5708a66aa1ba7f0dcec5eb60248f5d4406afb7cb921d",
+      "count": 3,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "e68a35a0c3ec27cd79ecd99985995f8888e36d0162401b27ef63599d81cfbebd",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "4a8982307b31cfa993fc8fd4631715aa89c64d112699dd5f40e5a5d7b816dd03",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "14d9e80d536fc9731399798d90b4111daa0dc5d310104f30bfa41613ea2f7214",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "b3ca39f5ba353af6afa348cb96ab737c1b3cd712f6a0eb9092083b9eac927223",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "aa887ab04fea3301b1277e80b4f168f7fb190ac43eaea22cb9a8ec311a9f4c31",
+      "count": 2,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "8b00838478b42766dce7d6323dbd8310e04450a9a13ac2b9634f943bcb44739f",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "8b00838478b42766dce7d6323dbd8310e04450a9a13ac2b9634f943bcb44739f",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "b38dcf20446a09efe24488dd2d5534d2b2e10a0b2d96fc86c2a8f66d88b8f4c8",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "9f71e40a332e30e60ea30fef75e291890c83b824fdabbdf94c8bc50e77e83a3d",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "158bbdc0b470a1f0d6fe4d2dfbfaa548a9134550797c762abf894360275b1e46",
+      "count": 2,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "da682e26e8b2c13699793e90c8074544080330c5b23e8b6a493a5a9edadafa8b",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "e6d445b6cd8c7942d08218a5e71f38fe2b91264c077b3da31a8f22b864df83a2",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "8a22ba1edb0acf7fbf33d9d91504a9e1100d6ff573cf2370b3a60bb00ff43fb5",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "a417b483b54c118d28515debeabeb5118f85f879f5a5e98f30b8a5fb5f8f760d",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "230f679cc806988316d8f0c7559ab0e023b0d819d7dc31d10da2f63a5a69c65e",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "3ae147d94f06427d40f3d11e38f411f9078ed28b669f03b852a660c6ab9c4555",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/Checkpoints.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "d778891541b89596be6e3df0afb1ca0d57b0658f1c7a29430933a9f463bc7b53",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/ParsedHttp.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "14d9e80d536fc9731399798d90b4111daa0dc5d310104f30bfa41613ea2f7214",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/ParsedHttp.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "68d01934aef2e31798bca43a1fc2db8488d75245beb1af1f79378ef40532bb08",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "d8fd2c2e8454e05c6b516e1a2d3110f3ef1788859ce4b254f6192bad36d44bcf",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "9f2af1318332abddb1c951f1186fbdd984f9b8abccf7cb9b3b70f42e427f5558",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "e896cf2826da5800789f1a943f4fe5a01d78131e19b268be3073905b4ce95879",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "CORE_INFRA_DEPENDENCY",
+      "hash": "bf0a7a9bbee5b6482e9001f39245336c26417f7355087408a394b6f77368c6ae",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "04dd9c2239682f59349adf4e15e06d57dd48ddbb31165bdb8a036eba63b3a3b6",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "04dd9c2239682f59349adf4e15e06d57dd48ddbb31165bdb8a036eba63b3a3b6",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "c6c5dff28a9ab21713f16b1d5aac9dbbd1defac060d73c2be29f1442ca06d308",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "6200432c6572e7d108234440484e5f1d4b43b181814e5f0b7ad70b19164d80c4",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "6200432c6572e7d108234440484e5f1d4b43b181814e5f0b7ad70b19164d80c4",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "695578f012dc6ec6dfce11a976b9815e1aa0f79cef29178ff5371cf996fd54a7",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "695578f012dc6ec6dfce11a976b9815e1aa0f79cef29178ff5371cf996fd54a7",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "af884121d547226f29ca1f226d6db9bead5cf13f50d6f306d61bb2f7604dc592",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "f3bb40a0ba0dcc7b18dbe5d81adafa9303076e9765f4372fed8bec30ab184bf1",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "f3bb40a0ba0dcc7b18dbe5d81adafa9303076e9765f4372fed8bec30ab184bf1",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "CORE_CONCRETE_PROVIDER",
+      "hash": "8a02e5ce6cbf8ee12ea25c9d5c8f2ecaaca297117ec07cd2a466c0164a1fc733",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "CORE_ADAPTER_TYPE",
+      "hash": "8a02e5ce6cbf8ee12ea25c9d5c8f2ecaaca297117ec07cd2a466c0164a1fc733",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "8b7c5a1e48449bbf015f497fd05c9c291f60a5d50daba4d98be4a257f5dd85cc",
+      "count": 2,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "PERSISTENCE_IN_POLICY_OR_INBOUND",
+      "hash": "3ba1e7e700cad5546d29fecb70235135d7819bb17a751e975cab0b2382bd4886",
+      "count": 2,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "ee86b90320c07c3dc055e8f2db1d5a9542ff44e8d03119777fcaad18c3144ff9",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "ff98bae7673d89b9bf72bccccbc4b4aa6afd381599f4f34e5556e7b6cf0314d5",
+      "count": 2,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    },
+    {
+      "path": "workers/processing-worker/src/main/java/dev/atlaslab/worker/WorkerEvents.java",
+      "rule": "SQL_IN_POLICY_OR_INBOUND",
+      "hash": "13c7f3b66847957226bbd74dc02e969bfae7fc5511258bbd99576e804a7a7c47",
+      "count": 1,
+      "owner": "repository-owner",
+      "rationale": "Existing code predates explicit hexagonal guardrails; extraction requires separate approved runtime change.",
+      "story": "LAB-107",
+      "reviewBy": "2026-11-30"
+    }
+  ]
+}

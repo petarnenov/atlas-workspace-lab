@@ -27,7 +27,9 @@ approval, never silently report them as accepted. LAB-107 revision 1 records the
 requested hexagonal/microkernel and replaceable artifact-store target.
 
 Every proposal must identify application-owned ports/types, dependency direction,
-bootstrap bindings, data/lifecycle ownership and substitution tests. Explain how
+bootstrap bindings, data/lifecycle ownership and substitution tests. Use minimal capability contracts for broad reuse: no provider options, transport
+DTOs or deployment details in core ports. Retain explicit security, integrity and
+failure semantics. Explain how worker,
 parser and storage can change without changing use-case source. Independent
 deployment is not proof of replaceability. Compare storage alternatives and
 document consistency/recovery across storage boundaries. List existing violations

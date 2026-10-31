@@ -82,9 +82,9 @@ Where appropriate, treat small/fast classification and scoring models as first-c
 
 ### Architecture decisions and substitution evidence
 
-Read the [ADR register](adr/README.md) with these principles. Proposed LAB-107
-ADRs make the requested hexagonal/microkernel boundaries explicit; their status
-must not be represented as accepted until exact owner approval is recorded.
+Read the [ADR register](adr/README.md) with these principles. Owner-approved LAB-107
+ADRs make hexagonal/microkernel boundaries and minimal reusable contracts explicit.
+See the register and LAB-107 approval evidence.
 P01 does not by itself define a microkernel architecture. Independent releases
 do not establish dependency inversion or provider/storage replaceability.
 Feature reviews must show ports/types, dependency direction, ownership, bindings,

@@ -15,6 +15,7 @@ jobs:
           node-version: '24'
       - run: |
           node scripts/check-scaffold.mjs
+          make architecture-test
           node scripts/check-architecture.mjs
           node scripts/check-contracts.mjs
       - run: make test-tools

@@ -1,6 +1,6 @@
 # LAB-107 — Architecture documentation and enforcement
 
-Revision 1. Status: proposed; exact owner approval pending.
+Revision 1. Status: owner-approved (f737615), with minimal-contract clarification; see approval.md.
 Synthetic story: prevent recurrence of LAB-106 provider/storage coupling.
 
 Record ADR-0001/0002, update instructions, and add deterministic offline Node

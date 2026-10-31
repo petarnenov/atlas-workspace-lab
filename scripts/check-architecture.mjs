@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, relative } from "node:path";
+import { run as checkBoundaries } from './architecture-guardrails.mjs';
 
 const principles = readFileSync("docs/architecture/principles.md", "utf8");
 const instructions = readFileSync("AGENTS.md", "utf8");
@@ -63,3 +64,4 @@ console.log("P01–P21 document, Codex reference, and scoped Python exception ch
 console.log(
   "NOTE: This does not prove runtime security, contract compatibility, or architectural correctness.",
 );
+if (checkBoundaries() !== 0) process.exitCode = 1;
