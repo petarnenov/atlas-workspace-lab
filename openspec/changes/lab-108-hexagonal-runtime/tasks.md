@@ -22,10 +22,11 @@
       dry-run reconciliation; prove repeatability and rollback including new writes.
 - [x] Remove obsolete concrete code; update exact file roles, empty debt baseline
       only after all findings are gone; run strict full audit and semantic review.
-- [ ] Run meaningful happy/failure unit, integration, adapter/consumer contracts,
+- [x] Run meaningful happy/failure unit, integration, adapter/consumer contracts,
       >=75% measured source coverage, dev Kubernetes E2E and security checks locally.
 - [x] Verify independent build/deploy, parser three replicas, config-only substitution
       and original component images in worker black-box conformance tests.
-- [ ] Record actual evidence/runbook/compliance matrix and human review; integrate
-      to dev, then run mandatory hosted promotion checks on dev-to-main PR.
+- [x] Record actual evidence, runbook, compliance matrix and implementation self-review.
+- [ ] Obtain independent human review and integrate to dev, then run mandatory
+      hosted promotion checks on the dev-to-main PR.
 - [ ] Obtain human merge review. Do not auto-merge, archive or delete legacy data.
