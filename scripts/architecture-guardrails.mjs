@@ -52,7 +52,7 @@ export function inspectSource(path,source,role,adapterTypes=[]) {
   for(const line of code.split('\n')) {
     if(core && /\b(?:org\.springframework|java\.sql|javax\.sql|java\.net\.http|java\.nio\.file|software\.amazon|com\.fasterxml|docling(?:\.|\b)|sqlite3|boto3|requests|httpx)\b|\.adapters\./.test(line)) emit('CORE_INFRA_DEPENDENCY',line,offset);
     if(core && /\b(?:ParserClient|ObjectsStore|DoclingDocument|DocumentConverter|S3Client|JdbcTemplate|TransactionTemplate|HttpClient|Files|Path)\b/.test(line)) emit('CORE_CONCRETE_PROVIDER',line,offset);
-    if(core && adapterTypes.some(type=>new RegExp('\\b'+type+'\\b').test(line))) emit('CORE_ADAPTER_TYPE',line,offset);
+    if(core && adapterTypes.some(type=>new RegExp('\\b'+type.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b').test(line))) emit('CORE_ADAPTER_TYPE',line,offset);
     if((core||role==='inbound') && /\.\s*(?:query|queryForList|queryForMap|queryForObject|update|execute|executeWithoutResult)\s*\(/.test(line)) emit('PERSISTENCE_IN_POLICY_OR_INBOUND',line,offset);
     if(core && /\b(?:if|switch)\s*\(.*(?:[Dd]ocling|[Ss]3|[Pp]ostgres)/.test(line)) emit('PROVIDER_BRANCH',line,offset);
     offset+=line.length+1;
@@ -67,6 +67,7 @@ function walk(root,path,files=[]) {
   for(const entry of readdirSync(resolve(root,path),{withFileTypes:true})) {
     if(['build','node_modules','.venv','__pycache__','tests','test','k8sProbeTest'].includes(entry.name)) continue;
     const child=path+'/'+entry.name;
+    if(entry.isSymbolicLink()) throw Error('Source symlinks require explicit review: '+child);
     if(entry.isDirectory()) walk(root,child,files);
     else if(/\.(java|py)$/.test(child)) files.push(child);
   }

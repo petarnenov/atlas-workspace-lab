@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';
+import {mkdtempSync,mkdirSync,writeFileSync,rmSync,symlinkSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {spawnSync} from 'node:child_process';
@@ -29,6 +29,7 @@ test('comments, strings and text blocks cannot create executable import false po
 });
 test('core rejects infrastructure, qualified calls, concrete DTOs and provider policy',()=>{
  assert.ok(inspectSource('a.java','OtherVendorAdapter.Result value;','port',['OtherVendorAdapter']).some(f=>f.rule==='CORE_ADAPTER_TYPE'));
+ assert.ok(inspectSource('a.java','Vendor$Adapter.Result value;','port',['Vendor$Adapter']).some(f=>f.rule==='CORE_ADAPTER_TYPE'));
  for(const text of ['import org.springframework.stereotype.Component;','java.net.http.HttpClient.newHttpClient();','import software.amazon.awssdk.services.s3.*;','import java.nio.file.Files;','import dev.demo.adapters.HttpParser;','ParserClient.Parsed parse();','if (useDocling) {}','String x="DoclingDocument";','from docling.document_converter import DocumentConverter']) assert.ok(scan(text).length,text);
  for(const role of ['domain','application','port']) assert.ok(scan('import java.sql.Connection;',role).length);
  assert.equal(scan('record ParsedDocument(String text) {}','domain').length,0);
@@ -59,6 +60,8 @@ test('inventory classifies new layer files, fails new flat files and detects sch
  assert.ok(inventory(root,p).length);
  assert.throws(()=>inventory(root,{...p,files:{'missing.java':'domain'}}),/Missing/);
  write('outside.java','class X {}');assert.throws(()=>inventory(root,{...p,files:{'outside.java':'domain'}}),/outside roots/);
+ symlinkSync(join(root,'outside.java'),join(root,'services/demo/Link.java'));
+ assert.throws(()=>inventory(root,p),/symlinks/);
 }));
 test('ratchet detects new, duplicate, stale, changed, moved, expired and unapproved debt',()=>{
  const f=finding(),e=entry(f);
