@@ -55,6 +55,9 @@ recommended. Helm CI keeps both profiles and their network-boundary targets
 alive. It uses `ATLAS_KIND_WORKER=1` to create an
 additional kind worker node (`infra/k8s/kind-ci.json`), accommodating scheduler
 reservations without changing application requests or limits. Both Docker nodes
+accept demo application pods (the CI control-plane registration has `taints: []`,
+as in the single-node local setup). This is restricted to the CI cluster config.
+Both nodes
 share the runner's physical CPUs; these are functional tests, not throughput or
 production capacity measurements. Existing local clusters are not recreated.
 Tests explicitly

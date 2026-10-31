@@ -96,6 +96,7 @@ else if(name==='javac')console.log('javac 21.0.1');else if(name==='pnpm')console
       r.setup();
       assert.equal(readFileSync('.local/k8s/created-config','utf8'),'infra/k8s/kind-ci.json');
       assert.deepEqual(JSON.parse(readFileSync('infra/k8s/kind-ci.json')).nodes.map(node=>node.role),['control-plane','worker']);
+      assert.match(JSON.parse(readFileSync('infra/k8s/kind-ci.json')).nodes[0].kubeadmConfigPatches[0],/nodeRegistration:\n  taints: \[\]/);
     } finally { delete process.env.ATLAS_KIND_WORKER; }
     // Fake kind's stdout includes its usual trailing newline.
     writeFileSync(

@@ -25,6 +25,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: make helm-tools
       - run: make helm-setup ENV=dev
+      - name: Verify both CI nodes accept application pods
+        run: |
+          node --input-type=module <<'JS'
+          import {execute,kubectlTool,root,context} from './scripts/k8s/runtime.mjs';
+          const nodes=JSON.parse(execute(kubectlTool,['--kubeconfig',root+'/kubeconfig','--context',context,'get','nodes','-o','json'],{quiet:true})).items;
+          if(nodes.length!==2||nodes.some(node=>(node.spec.taints??[]).some(taint=>taint.effect==='NoSchedule')))
+            throw Error('Helm CI requires two schedulable demo nodes');
+          JS
       - run: make helm-build ENV=dev
       - run: make helm-lint ENV=dev
       - run: make helm-up ENV=dev
