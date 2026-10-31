@@ -85,6 +85,26 @@ services:
     volumes:
       - ./infra/storage:/policies:ro
       - ./infra/storage/bootstrap.sh:/bootstrap.sh:ro
+  docling-parser:
+    image: atlas-lab-docling-parser
+    build: { context: ./services/docling-parser }
+    env_file: [.local/parser.env]
+    read_only: true
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: ["/tmp:size=256m,mode=1777"]
+    mem_limit: 2g
+    cpus: 2
+    networks: [parser-private]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8083/health/ready',timeout=3)"]
+      interval: 5s
+      timeout: 4s
+      retries: 60
+networks:
+  parser-private:
+    internal: true
 volumes:
   postgres:
   kafka:

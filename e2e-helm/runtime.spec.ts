@@ -1,3 +1,4 @@
+import {syntheticPdf as pdf} from '../e2e/fixtures/pdf';
 import { test, expect } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -21,27 +22,7 @@ for (const env of ["dev", "prod"] as const)
     const up = () => helmRuntime.up(env);
     const root = helmRuntime.directory(env);
 
-    function pdf() {
-      let text = "%PDF-1.4\n";
-      const offsets = [0];
-      for (const [i, object] of [
-        "<< /Type /Catalog /Pages 2 0 R >>",
-        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] >>",
-      ].entries()) {
-        offsets.push(Buffer.byteLength(text));
-        text += `${i + 1} 0 obj\n${object}\nendobj\n`;
-      }
-      const xref = Buffer.byteLength(text);
-      text += "xref\n0 4\n0000000000 65535 f \n";
-      for (const n of offsets.slice(1))
-        text += `${String(n).padStart(10, "0")} 00000 n \n`;
-      return Buffer.from(
-        text +
-          `trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`,
-      );
-    }
-    const file = () => ({
+        const file = () => ({
       name: "synthetic.pdf",
       mimeType: "application/pdf",
       buffer: pdf(),
@@ -86,7 +67,7 @@ for (const env of ["dev", "prod"] as const)
         expect(deployment.status.readyReplicas).toBe(
           env === "prod" && ["portal-ui", "workspace-api"].includes(name)
             ? 2
-            : 1,
+            : name === "docling-parser" ? 3 : 1,
         );
       }
       const other = env === "dev" ? "prod" : "dev";
@@ -146,6 +127,26 @@ for (const env of ["dev", "prod"] as const)
         ),
       ).toBe("1");
     });
+    test("saved Docling copy is readable through API and Make with tenant isolation", async ({request}) => {
+      const parsed = await request.get(`/api/v1/assets/${assetId}/parsed`,{headers:{Authorization:`Bearer ${token()}`}});
+      expect(parsed.status()).toBe(200);
+      expect(await parsed.text()).toContain("Atlas synthetic document");
+      const structured = await request.get(`/api/v1/assets/${assetId}/parsed?format=json`,{headers:{Authorization:`Bearer ${token()}`}});
+      expect((await structured.json()).schema_name).toBe("DoclingDocument");
+      const forbidden = await request.get(`/api/v1/assets/${assetId}/parsed`,{headers:{Authorization:`Bearer ${token('b')}`}});
+      expect(forbidden.status()).toBe(404);
+      expect(execute("make",["parsed-copy",`ENV=${env}`,`ASSET_ID=${assetId}`],{quiet:true})).toContain("Atlas synthetic document");
+      expect(db(`SELECT count(*) FROM parsed_document WHERE asset_id='${assetId}'`,"worker_checkpoint")).toBe("1");
+    });
+    test("parser deploy changes only its independent release", async () => {
+      const before=JSON.parse(helmRuntime.helm(env,["list","-o","json"]));
+      helmRuntime.deploy(env,"docling-parser");
+      const after=JSON.parse(helmRuntime.helm(env,["list","-o","json"]));
+      for(const release of before) {
+        const current=after.find((item:any)=>item.name===release.name);
+        expect(Number(current.revision)).toBe(Number(release.revision)+(release.name==="atlas-docling-parser"?1:0));
+      }
+    });
     test("identity and tenant denial plus idempotency hold in Kubernetes", async ({
       request,
     }) => {
@@ -195,6 +196,8 @@ for (const env of ["dev", "prod"] as const)
                 })
               ).json()
             ).status,
+          // The serial worker may still be converting the preceding valid upload.
+          { timeout: 80_000 },
         )
         .toBe("FAILED");
       await completed(request, receipt.assetId);

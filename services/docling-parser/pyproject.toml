@@ -1,0 +1,21 @@
+[project]
+name = "atlas-docling-parser"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = ["docling==2.145.0", "torch", "torchvision"]
+
+[dependency-groups]
+dev = ["pytest==9.0.2", "pytest-cov==7.0.0"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=parser_service --cov=convert --cov=stdio_bridge --cov-report=term-missing --cov-fail-under=75"

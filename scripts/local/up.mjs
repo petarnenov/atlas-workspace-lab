@@ -1,7 +1,9 @@
+import {parserCredentials} from "./parser-credentials.mjs";
+parserCredentials();
 import { spawnSync } from "node:child_process";
 for (const args of [
-  ["compose", "build", "postgres", "kafka", "storage-init"],
-  ["compose", "up", "-d", "--wait", "postgres", "kafka", "storage"],
+  ["compose", "build", "postgres", "kafka", "storage-init", "docling-parser"],
+  ["compose", "up", "-d", "--wait", "postgres", "kafka", "storage", "docling-parser"],
   ["compose", "run", "--rm", "--no-deps", "kafka-init"],
   ["compose", "run", "--rm", "--no-deps", "storage-init"],
 ]) {

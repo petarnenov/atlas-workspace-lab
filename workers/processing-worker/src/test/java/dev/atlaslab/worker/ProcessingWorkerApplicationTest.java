@@ -19,6 +19,7 @@ class ProcessingWorkerApplicationTest {
   Checkpoints checkpoints;
   ObjectsStore store;
   Sandbox sandbox;
+  ParserClient parser;
   KafkaTemplate<String, String> kafka;
   WorkerEvents events;
 
@@ -32,12 +33,21 @@ class ProcessingWorkerApplicationTest {
             System.getenv("LAB_WORKER_DB_PASSWORD"));
     new ResourceDatabasePopulator(new ClassPathResource("schema.sql")).execute(ds);
     db = new JdbcTemplate(ds);
-    db.execute("TRUNCATE checkpoint,worker_finding RESTART IDENTITY");
+    db.execute("TRUNCATE parsed_document,checkpoint,worker_finding RESTART IDENTITY");
     checkpoints = new Checkpoints(db, new DataSourceTransactionManager(ds));
     store = mock(ObjectsStore.class);
     sandbox = mock(Sandbox.class);
     kafka = mock(KafkaTemplate.class);
-    events = new WorkerEvents(checkpoints, store, sandbox, kafka);
+    parser = mock(ParserClient.class);
+    try {
+      when(parser.parse(any()))
+          .thenReturn(
+              new ParserClient.Parsed(
+                  "0".repeat(64), "2.145.0", ParserClient.PIPELINE, 1, "Synthetic", "{}"));
+    } catch (Exception e) {
+      throw new AssertionError(e);
+    }
+    events = new WorkerEvents(checkpoints, store, sandbox, parser, kafka);
     when(kafka.send(anyString(), anyString(), anyString()))
         .thenReturn(CompletableFuture.completedFuture(null));
   }
@@ -58,7 +68,7 @@ class ProcessingWorkerApplicationTest {
     assertEquals(1, db.queryForObject("SELECT count(*) FROM checkpoint", Integer.class));
     // New repository/scanner instances simulate loss of all in-memory processing state.
     var restarted = new Checkpoints(db, new DataSourceTransactionManager(db.getDataSource()));
-    var worker = new WorkerEvents(restarted, store, sandbox, kafka);
+    var worker = new WorkerEvents(restarted, store, sandbox, parser, kafka);
     when(store.get(e.objectKey())).thenReturn("synthetic".getBytes());
     worker.process();
     String outcome = db.queryForObject("SELECT outcome FROM checkpoint", String.class);
@@ -160,5 +170,60 @@ class ProcessingWorkerApplicationTest {
             "worker_owner",
             System.getenv("LAB_WORKER_DB_PASSWORD"));
     assertThrows(Exception.class, denied::getConnection);
+  }
+
+  @Test
+  void artifactAndOutcomeAreAtomicAndFenced() throws Exception {
+    var e = input();
+    events.receive(Wire.json(e));
+    var stale = checkpoints.claim();
+    assertTrue(checkpoints.renew(stale));
+    db.update("UPDATE checkpoint SET lease_until=now()-interval '1 second'");
+    assertFalse(checkpoints.renew(stale));
+    var current = checkpoints.claim();
+    var parsed =
+        new ParserClient.Parsed("0".repeat(64), "2.145.0", ParserClient.PIPELINE, 1, "Saved", "{}");
+    assertFalse(checkpoints.finishParsed(stale, e, parsed));
+    assertEquals(0, db.queryForObject("SELECT count(*) FROM parsed_document", Integer.class));
+    assertTrue(checkpoints.finishParsed(current, e, parsed));
+    assertFalse(checkpoints.finishParsed(current, e, parsed));
+    assertEquals("Saved", db.queryForObject("SELECT markdown FROM parsed_document", String.class));
+    assertEquals(
+        "COMPLETED",
+        Wire.event(db.queryForObject("SELECT outcome FROM checkpoint", String.class), false)
+            .outcome());
+  }
+
+  @Test
+  void parserOutageRetriesAndRejectedConversionFailsWithoutArtifact() throws Exception {
+    var e = input();
+    events.receive(Wire.json(e));
+    when(store.get(e.objectKey())).thenReturn(new byte[] {1});
+    when(parser.parse(any())).thenThrow(new java.io.IOException("private"));
+    events.process();
+    assertNull(db.queryForObject("SELECT outcome FROM checkpoint", String.class));
+    db.update("UPDATE checkpoint SET next_at=now()");
+    doThrow(new ParserClient.Rejected()).when(parser).parse(any());
+    events.process();
+    assertEquals(
+        "PROCESSING_ERROR",
+        Wire.event(db.queryForObject("SELECT outcome FROM checkpoint", String.class), false)
+            .errorCode());
+    assertEquals(0, db.queryForObject("SELECT count(*) FROM parsed_document", Integer.class));
+  }
+
+  @Test
+  void artifactInsertFailureRollsBackCompletedCheckpoint() {
+    var e = input();
+    events.receive(Wire.json(e));
+    var lease = checkpoints.claim();
+    var invalid =
+        new ParserClient.Parsed(
+            "0".repeat(64), "2.145.0", ParserClient.PIPELINE, 99, "Saved", "{}");
+    assertThrows(
+        org.springframework.dao.DataIntegrityViolationException.class,
+        () -> checkpoints.finishParsed(lease, e, invalid));
+    assertNull(db.queryForObject("SELECT outcome FROM checkpoint", String.class));
+    assertEquals(0, db.queryForObject("SELECT count(*) FROM parsed_document", Integer.class));
   }
 }

@@ -1,0 +1,9 @@
+{
+  "name": "docling-parser",
+  "root": "services/docling-parser",
+  "projectType": "application",
+  "targets": {
+    "build": { "command": "make parser-build", "cache": false },
+    "test": { "command": "make parser-test", "cache": false }
+  }
+}

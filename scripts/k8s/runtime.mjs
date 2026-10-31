@@ -4,6 +4,7 @@ import {
   generateKeyPairSync,
   sign,
   createPublicKey,
+  createHmac,
 } from "node:crypto";
 import {
   readFileSync,
@@ -310,6 +311,7 @@ export function secretObjects(
       LAB_ASSET_OBJECT_PASSWORD: c.ASSET_OBJECT,
       "service-public.pem": key("service-public.pem"),
     },
+    "parser-access": { "parser-token": createHmac("sha256", c.WORKER_DB).update("atlas-docling-parser-v1").digest("hex") },
     "worker-runtime": {
       LAB_WORKER_DB_PASSWORD: c.WORKER_DB,
       LAB_WORKER_OBJECT_PASSWORD: c.WORKER_OBJECT,
@@ -377,7 +379,7 @@ export function setup({ clusterOnly = false } = {}) {
       "--image",
       versions.node,
       "--config",
-      "infra/k8s/kind.json",
+      process.env.ATLAS_KIND_WORKER === "1" ? "infra/k8s/kind-ci.json" : "infra/k8s/kind.json",
       "--kubeconfig",
       `${root}/kubeconfig`,
       "--wait",
@@ -471,6 +473,7 @@ export function build() {
   );
   record("postgres", [postgres]);
   record("kafka", ["infra/kafka"]);
+  record("docling-parser", ["services/docling-parser"]);
   const storage = `${root}/build/storage-init`;
   mkdirSync(storage, { recursive: true });
   cpSync("infra/storage", storage, { recursive: true });
@@ -491,6 +494,15 @@ export function build() {
   writeFileSync(`${root}/images.json`, JSON.stringify(built, null, 2) + "\n", {
     mode: 0o600,
   });
+}
+export function buildParser() {
+  guard();
+  execute("docker",["build","--provenance=false","-t","atlas/docling-parser:candidate","services/docling-parser"],{timeout:1200000});
+  const id=execute("docker",["image","inspect","atlas/docling-parser:candidate","--format","{{.Id}}"],{quiet:true}).trim();
+  const tag="atlas/docling-parser:"+id.replace("sha256:","");
+  execute("docker",["tag","atlas/docling-parser:candidate",tag]);
+  loadImages([tag]);
+  return tag;
 }
 export function loadImages(images, run = execute) {
   const architecture = run(
@@ -588,6 +600,7 @@ export function up() {
   for (const name of [
     "workspace-api",
     "asset-service",
+    "docling-parser",
     "processing-worker",
     "portal-ui",
   ])

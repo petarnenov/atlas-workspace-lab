@@ -17,7 +17,7 @@ Read **[docs/architecture/principles.md](docs/architecture/principles.md)** befo
 ## Approved technology boundary
 - Frontend: TypeScript, React, Vite, Vitest. Other approved frontend libraries as needed.
 - Backend and workers: Java and Spring Boot, Gradle, supported LTS JDK.
-- No Python. Monorepo orchestration evaluated with Nx and pnpm.
+- Python is allowed only in `services/docling-parser` and its tests/build (approved LAB-106 exception); all other backend/worker code remains Java. Monorepo orchestration evaluated with Nx and pnpm.
 - This PoC is not a clone of any company system.
 
 ## Required SDD flow

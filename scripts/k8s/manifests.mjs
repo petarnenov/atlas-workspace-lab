@@ -133,7 +133,7 @@ function deployment(name, port, values, secret, keys = []) {
           securityContext: podSecurity,
           terminationGracePeriodSeconds: 30,
           containers: [c],
-          volumes: [tmp, ...(keys.length ? [keyVolume(secret, keys)] : [])],
+          volumes: [structuredClone(tmp), ...(keys.length ? [keyVolume(secret, keys)] : [])],
         },
       },
     },
@@ -403,6 +403,8 @@ export function manifests() {
       ["workspace-api", 8080],
       ["asset-service", 8081],
       ["portal-ui", 8080],
+      ["processing-worker", 8082],
+      ["docling-parser", 8083],
     ].map(([n, p]) => service(n, p)),
     object("v1", "Service", "kafka-client", {
       spec: {
@@ -430,6 +432,7 @@ export function manifests() {
       {
         SERVER_ADDRESS: "0.0.0.0",
         LAB_ASSET_URL: "http://asset-service:8081",
+        LAB_WORKER_URL: "http://processing-worker:8082",
         LAB_FIXTURE_PUBLIC_KEY: "/keys/fixture-public.pem",
         LAB_SERVICE_PRIVATE_KEY: "/keys/service-private.pem",
       },
@@ -453,6 +456,9 @@ export function manifests() {
       "processing-worker",
       0,
       {
+        SERVER_ADDRESS: "0.0.0.0",
+        LAB_DOCLING_URL: "http://docling-parser:8083",
+        LAB_PARSER_TOKEN_FILE: "/parser-keys/parser-token",
         WORKER_DB_URL: "jdbc:postgresql://postgres:5432/worker_checkpoint",
         KAFKA_BOOTSTRAP: "kafka-client:19092",
         LAB_OBJECT_ENDPOINT: "http://storage:9000",
@@ -463,6 +469,7 @@ export function manifests() {
       ["service-public.pem"],
     ),
     deployment("portal-ui", 8080, {}, null),
+    deployment("docling-parser", 8083, {}, null),
     object("networking.k8s.io/v1", "NetworkPolicy", "default-deny", {
       spec: { podSelector: {}, policyTypes: ["Ingress", "Egress"] },
     }),
@@ -489,6 +496,8 @@ export function manifests() {
       },
     }),
     ...allow("ui-api", "portal-ui", "workspace-api", 8080),
+    ...allow("worker-parser", "processing-worker", "docling-parser", 8083),
+    ...allow("api-worker", "workspace-api", "processing-worker", 8082),
     ...allow("api-assets", "workspace-api", "asset-service", 8081),
     ...["asset-service", "processing-worker"].flatMap((from) =>
       [
@@ -502,6 +511,22 @@ export function manifests() {
     ...allow("kafka-internal", "kafka", "kafka", 9093),
     ...allow("kafka-broker", "kafka", "kafka", 19092),
   ];
+  for (const name of ["processing-worker", "docling-parser"]) {
+    const item = items.find(x => x.kind === "Deployment" && x.metadata.name === name);
+    const pod = item.spec.template.spec;
+    pod.volumes.push({name:"parser-keys", secret:{secretName:"parser-access", defaultMode:288}});
+    pod.containers[0].volumeMounts.push({name:"parser-keys",mountPath:"/parser-keys",readOnly:true});
+    if (name === "docling-parser") {
+      item.spec.replicas = 3;
+      const c = pod.containers[0];
+      c.env.push({name:"PARSER_TOKEN_FILE",value:"/parser-keys/parser-token"});
+      c.resources = {requests:{cpu:"500m",memory:"1024Mi"}, limits:{cpu:"2000m",memory:"2048Mi"}};
+      c.startupProbe = {...http("/health/ready",8083),failureThreshold:60};
+      c.readinessProbe = http("/health/ready",8083);
+      c.livenessProbe = {...http("/health/live",8083),failureThreshold:12};
+      pod.volumes[0].emptyDir.sizeLimit = "256Mi";
+    }
+  }
   const ui = items.find(
     (x) => x.kind === "Deployment" && x.metadata.name === "portal-ui",
   ).spec.template.spec;

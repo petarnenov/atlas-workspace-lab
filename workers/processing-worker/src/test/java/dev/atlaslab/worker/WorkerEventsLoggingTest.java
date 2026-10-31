@@ -45,7 +45,7 @@ class WorkerEventsLoggingTest {
     objects = mock(ObjectsStore.class);
     sandbox = mock(Sandbox.class);
     kafka = mock(KafkaTemplate.class);
-    worker = new WorkerEvents(checkpoints, objects, sandbox, kafka);
+    worker = new WorkerEvents(checkpoints, objects, sandbox, mock(ParserClient.class), kafka);
     logger = (Logger) LoggerFactory.getLogger(WorkerEvents.class);
     previousLevel = logger.getLevel();
     previousAdditive = logger.isAdditive();
@@ -120,18 +120,18 @@ class WorkerEventsLoggingTest {
               return true;
             })
         .when(checkpoints)
-        .finish(eq(lease), any());
+        .finishParsed(eq(lease), eq(input), any());
     worker.process();
     assertMessage("processing_started", Level.INFO);
     assertMessage("outcome_saved", Level.INFO);
     assertTrue(messages().getLast().contains("status=COMPLETED errorCode=NONE"));
-    verify(checkpoints).finish(eq(lease), argThat(e -> e.outcome().equals("COMPLETED")));
+    verify(checkpoints).finishParsed(eq(lease), eq(input), any());
   }
 
   @Test
   void rejectedFenceNeverClaimsSavedOutcome() {
     var lease = lease(1);
-    doReturn(false).when(checkpoints).finish(eq(lease), any());
+    doReturn(false).when(checkpoints).finishParsed(eq(lease), eq(input), any());
     worker.process();
     assertMessage("outcome_not_saved", Level.WARN);
     assertFalse(messages().stream().anyMatch(s -> s.startsWith("outcome_saved")));
@@ -145,7 +145,7 @@ class WorkerEventsLoggingTest {
     worker.process();
     verify(checkpoints).retry(lease);
     assertMessage("retry_scheduled", Level.WARN);
-    assertTrue(messages().getLast().contains("attempt=1 reason=OBJECT_UNAVAILABLE"));
+    assertTrue(messages().getLast().contains("attempt=1 reason=DEPENDENCY_UNAVAILABLE"));
     verify(checkpoints, never()).finish(any(), any());
   }
 
@@ -257,5 +257,43 @@ class WorkerEventsLoggingTest {
     doReturn(Map.of("input_payload", SENSITIVE, "attempts", 1)).when(checkpoints).claim();
     assertThrows(IllegalArgumentException.class, worker::process);
     assertTrue(messages().isEmpty());
+  }
+
+  @Test
+  void lostLeaseCancelsParsingAndCannotPublishOrSave() throws Exception {
+    var lease = lease(1);
+    var parser = mock(ParserClient.class);
+    var events = new WorkerEvents(checkpoints, objects, sandbox, parser, kafka);
+    events.renewalMillis = 20;
+    when(objects.get(input.objectKey())).thenReturn(new byte[] {1});
+    when(parser.parse(any()))
+        .thenAnswer(
+            invocation -> {
+              Thread.sleep(1000);
+              return null;
+            });
+    doReturn(false).when(checkpoints).renew(lease);
+    events.process();
+    assertFalse(Thread.currentThread().isInterrupted());
+    verify(checkpoints, never()).finishParsed(any(), any(), any());
+    verify(checkpoints, never()).finish(any(), any());
+    verify(checkpoints, never()).retry(any());
+  }
+
+  @Test
+  void parserPermanentFailureSkipsRetriesAndInvalidPdfSkipsParser() throws Exception {
+    var lease = lease(1);
+    var parser = mock(ParserClient.class);
+    var events = new WorkerEvents(checkpoints, objects, sandbox, parser, kafka);
+    when(objects.get(input.objectKey())).thenReturn(new byte[] {1});
+    when(parser.parse(any())).thenThrow(new ParserClient.Rejected());
+    doReturn(true).when(checkpoints).finish(eq(lease), any());
+    events.process();
+    verify(checkpoints).finish(eq(lease), argThat(e -> "PROCESSING_ERROR".equals(e.errorCode())));
+    verify(checkpoints, never()).retry(any());
+    clearInvocations(parser);
+    when(sandbox.inspect(any())).thenReturn("INVALID_DOCUMENT");
+    events.process();
+    verifyNoInteractions(parser);
   }
 }

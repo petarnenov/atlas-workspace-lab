@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-@Import(KafkaSafety.class)
+@Import({KafkaSafety.class, dev.atlaslab.demo.Errors.class})
 public class ProcessingWorkerApplication {
   public static void main(String[] args) {
     SpringApplication.run(ProcessingWorkerApplication.class, args);

@@ -6,3 +6,11 @@ CREATE TABLE IF NOT EXISTS checkpoint (
  sent boolean NOT NULL DEFAULT false, last_error varchar(32), UNIQUE(tenant_id,asset_id,correlation_id), UNIQUE(tenant_id,asset_id)
 );
 CREATE TABLE IF NOT EXISTS worker_finding (id bigserial PRIMARY KEY,event_id uuid,reason varchar(64) NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
+
+CREATE TABLE IF NOT EXISTS parsed_document (
+ tenant_id uuid NOT NULL, asset_id uuid NOT NULL, event_id uuid NOT NULL,
+ source_sha256 varchar(64) NOT NULL, parser_version varchar(128) NOT NULL,
+ pipeline_version varchar(128) NOT NULL, page_count int NOT NULL CHECK(page_count BETWEEN 1 AND 20),
+ markdown text NOT NULL, document text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(),
+ PRIMARY KEY(tenant_id,asset_id), UNIQUE(event_id)
+);

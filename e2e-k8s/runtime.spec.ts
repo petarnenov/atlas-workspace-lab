@@ -1,3 +1,4 @@
+import {syntheticPdf as pdf} from '../e2e/fixtures/pdf';
 import { test, expect } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -5,25 +6,6 @@ import { kubectl, token, up, setup, root } from "../scripts/k8s/runtime.mjs";
 
 test.describe.configure({ mode: "serial" });
 
-function pdf() {
-  let text = "%PDF-1.4\n";
-  const offsets = [0];
-  for (const [i, object] of [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] >>",
-  ].entries()) {
-    offsets.push(Buffer.byteLength(text));
-    text += `${i + 1} 0 obj\n${object}\nendobj\n`;
-  }
-  const xref = Buffer.byteLength(text);
-  text += "xref\n0 4\n0000000000 65535 f \n";
-  for (const n of offsets.slice(1))
-    text += `${String(n).padStart(10, "0")} 00000 n \n`;
-  return Buffer.from(
-    text + `trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`,
-  );
-}
 const file = () => ({
   name: "synthetic.pdf",
   mimeType: "application/pdf",
@@ -129,6 +111,8 @@ test("identity and tenant denial plus idempotency hold in Kubernetes", async ({
             })
           ).json()
         ).status,
+      // The serial worker may still be converting the preceding valid upload.
+      { timeout: 80_000 },
     )
     .toBe("FAILED");
   await completed(request, receipt.assetId);

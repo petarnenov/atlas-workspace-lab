@@ -71,3 +71,11 @@ for (const [name, fields] of Object.entries({
 console.log(
   "Contract invariants passed; authoritative OpenAPI/AsyncAPI validators run as separate CI steps.",
 );
+
+for (const name of ['parser-internal','worker-internal']) {
+ const api=JSON.parse(readFileSync('contracts/openapi/'+name+'.v1.json','utf8'));
+ assert.equal(api.openapi,'3.1.0');assert.equal(api.info.version,'1.0.0');
+ for(const [path,operations] of Object.entries(api.paths))for(const operation of Object.values(operations))
+  if(path.startsWith('/internal/'))assert.ok(operation.security?.length);
+}
+assert.ok(openapi.paths['/api/v1/assets/{assetId}/parsed'].get.security?.length);

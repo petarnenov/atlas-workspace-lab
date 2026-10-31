@@ -748,6 +748,46 @@
       "apiVersion": "v1",
       "kind": "Service",
       "metadata": {
+        "name": "processing-worker",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "selector": {
+          "app": "processing-worker"
+        },
+        "ports": [
+          {
+            "name": "main",
+            "port": 8082,
+            "targetPort": 8082
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "docling-parser",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "selector": {
+          "app": "docling-parser"
+        },
+        "ports": [
+          {
+            "name": "main",
+            "port": 8083,
+            "targetPort": 8083
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
         "name": "kafka-client",
         "namespace": "atlas-lab"
       },
@@ -1152,6 +1192,10 @@
                     "value": "http://asset-service:8081"
                   },
                   {
+                    "name": "LAB_WORKER_URL",
+                    "value": "http://processing-worker:8082"
+                  },
+                  {
                     "name": "LAB_FIXTURE_PUBLIC_KEY",
                     "value": "/keys/fixture-public.pem"
                   },
@@ -1455,6 +1499,18 @@
                 "imagePullPolicy": "Never",
                 "env": [
                   {
+                    "name": "SERVER_ADDRESS",
+                    "value": "0.0.0.0"
+                  },
+                  {
+                    "name": "LAB_DOCLING_URL",
+                    "value": "http://docling-parser:8083"
+                  },
+                  {
+                    "name": "LAB_PARSER_TOKEN_FILE",
+                    "value": "/parser-keys/parser-token"
+                  },
+                  {
                     "name": "WORKER_DB_URL",
                     "value": "jdbc:postgresql://postgres:5432/worker_checkpoint"
                   },
@@ -1533,6 +1589,11 @@
                     "name": "keys",
                     "mountPath": "/keys",
                     "readOnly": true
+                  },
+                  {
+                    "name": "parser-keys",
+                    "mountPath": "/parser-keys",
+                    "readOnly": true
                   }
                 ],
                 "readinessProbe": {
@@ -1581,6 +1642,13 @@
                       "path": "service-public.pem"
                     }
                   ]
+                }
+              },
+              {
+                "name": "parser-keys",
+                "secret": {
+                  "secretName": "parser-access",
+                  "defaultMode": 288
                 }
               }
             ]
@@ -1688,6 +1756,132 @@
                 "name": "tmp",
                 "emptyDir": {
                   "sizeLimit": "128Mi"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "name": "docling-parser",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "replicas": 3,
+        "selector": {
+          "matchLabels": {
+            "app": "docling-parser"
+          }
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "docling-parser"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "securityContext": {
+              "runAsNonRoot": true,
+              "runAsUser": 10001,
+              "runAsGroup": 10001,
+              "fsGroup": 10001,
+              "seccompProfile": {
+                "type": "RuntimeDefault"
+              }
+            },
+            "terminationGracePeriodSeconds": 30,
+            "containers": [
+              {
+                "name": "docling-parser",
+                "image": "atlas/docling-parser:build",
+                "imagePullPolicy": "Never",
+                "env": [
+                  {
+                    "name": "PARSER_TOKEN_FILE",
+                    "value": "/parser-keys/parser-token"
+                  }
+                ],
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
+                "resources": {
+                  "requests": {
+                    "cpu": "500m",
+                    "memory": "1024Mi"
+                  },
+                  "limits": {
+                    "cpu": "2000m",
+                    "memory": "2048Mi"
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "tmp",
+                    "mountPath": "/tmp"
+                  },
+                  {
+                    "name": "parser-keys",
+                    "mountPath": "/parser-keys",
+                    "readOnly": true
+                  }
+                ],
+                "ports": [
+                  {
+                    "containerPort": 8083
+                  }
+                ],
+                "readinessProbe": {
+                  "httpGet": {
+                    "path": "/health/ready",
+                    "port": 8083
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3,
+                  "failureThreshold": 6
+                },
+                "startupProbe": {
+                  "httpGet": {
+                    "path": "/health/ready",
+                    "port": 8083
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3,
+                  "failureThreshold": 60
+                },
+                "livenessProbe": {
+                  "httpGet": {
+                    "path": "/health/live",
+                    "port": 8083
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 3,
+                  "failureThreshold": 12
+                }
+              }
+            ],
+            "volumes": [
+              {
+                "name": "tmp",
+                "emptyDir": {
+                  "sizeLimit": "256Mi"
+                }
+              },
+              {
+                "name": "parser-keys",
+                "secret": {
+                  "secretName": "parser-access",
+                  "defaultMode": 288
                 }
               }
             ]
@@ -1820,6 +2014,154 @@
               {
                 "protocol": "TCP",
                 "port": 8080
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "worker-parser-in",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "docling-parser"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "processing-worker"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 8083
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "worker-parser-out",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "processing-worker"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "docling-parser"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 8083
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "api-worker-in",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "processing-worker"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "workspace-api"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 8082
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "api-worker-out",
+        "namespace": "atlas-lab"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app": "workspace-api"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "podSelector": {
+                  "matchLabels": {
+                    "app": "processing-worker"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 8082
               }
             ]
           }

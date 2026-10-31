@@ -7,6 +7,7 @@ for (const line of readFileSync(".env", "utf8").split("\n")) {
 }
 mkdirSync(".local/logs", { recursive: true });
 const modules = new Map([
+  ["parser-forward", "scripts/local/parser-forward.mjs"],
   ["asset-service", "services/asset-service"],
   ["workspace-api", "services/workspace-api"],
   ["processing-worker", "workers/processing-worker"],
@@ -29,8 +30,8 @@ function state() {
 function start(name) {
   const log = openSync(`.local/logs/${name}.log`, "a", 0o600);
   const child = spawn(
-    "java",
-    [
+    name === "parser-forward" ? process.execPath : "java",
+    name === "parser-forward" ? [modules.get(name)] : [
       "-Xmx192m",
       "-jar",
       `${modules.get(name)}/build/libs/${name}-0.1.0-SNAPSHOT.jar`,

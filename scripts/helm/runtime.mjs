@@ -14,6 +14,7 @@ export const applications = [
   "workspace-api",
   "asset-service",
   "processing-worker",
+  "docling-parser",
 ];
 export const imageNames = [
   ...applications,
@@ -31,7 +32,7 @@ export function environment(value = process.env.ENV ?? "dev") {
 }
 export function component(value) {
   if (!applications.includes(value))
-    throw Error("SERVICE must name one of the four applications");
+    throw Error("SERVICE must name a supported application");
   return value;
 }
 export const directory = (env) => `.local/helm/${environment(env)}`;
@@ -150,12 +151,12 @@ export function doctor(env) {
       quiet: true,
     }),
   );
-  if (info.MemTotal < 10 * 1024 ** 3)
+  if (info.MemTotal < 14 * 1024 ** 3 || info.NCPU < 4)
     throw Error(
-      "Allocate at least 10 GiB Docker RAM for concurrent dev/prod demos",
+      "Allocate at least 14 GiB Docker RAM for concurrent dev/prod demos",
     );
   console.log(
-    `Helm ${env} demo prerequisites OK (both profiles require 4 CPUs / 10 GiB Docker RAM).`,
+    `Helm ${env} demo prerequisites OK (both profiles require 4 CPUs / 14 GiB Docker RAM; 8 CPUs recommended for concurrent parser replicas).`,
   );
 }
 export function validateNamespace(env, current) {
@@ -249,10 +250,18 @@ export function setup(env) {
     kube(env, args, options),
   );
 }
-export function build(env) {
+export function build(env, service = process.env.SERVICE) {
   environment(env);
   assertNamespace(env);
   assertCredentials(env);
+  if (service) {
+    component(service);
+    if (service !== "docling-parser") throw Error("Independent build currently supports SERVICE=docling-parser; omit SERVICE for all images");
+    const inventory = images(env);
+    inventory[service] = native.buildParser();
+    writeFileSync(directory(env)+"/images.json",JSON.stringify(inventory,null,2)+"\n",{mode:0o600});
+    return;
+  }
   native.build();
   cpSync(`${native.root}/images.json`, `${directory(env)}/images.json`);
 }
@@ -321,6 +330,7 @@ export function up(env) {
   for (const service of [
     "workspace-api",
     "asset-service",
+    "docling-parser",
     "processing-worker",
     "portal-ui",
   ])

@@ -1,0 +1,89 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Atlas worker artifact internal API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/internal/v1/assets/{assetId}/parsed": {
+      "get": {
+        "operationId": "readParsedDocumentInternal",
+        "security": [
+          {
+            "serviceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "markdown",
+                "json"
+              ],
+              "default": "markdown"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed tenant-scoped artifact",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "text/markdown": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Access denied or unavailable artifact"
+          },
+          "401": {
+            "description": "Access denied or unavailable artifact"
+          },
+          "403": {
+            "description": "Access denied or unavailable artifact"
+          },
+          "404": {
+            "description": "Access denied or unavailable artifact"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "serviceToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "RS256 lab-bff identity, audience worker-parsed-read; verified tenant and subject"
+      }
+    }
+  }
+}

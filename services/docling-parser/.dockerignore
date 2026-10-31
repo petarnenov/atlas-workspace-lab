@@ -1,0 +1,11 @@
+*
+!Dockerfile
+!pyproject.toml
+!uv.lock
+!models.json
+!download_models.py
+!parser_service.py
+!convert.py
+!tests/
+!tests/**
+!stdio_bridge.py

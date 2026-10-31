@@ -1,0 +1,130 @@
+{{ include "atlas-component.guard" . }}
+{{ if eq .Values.component "docling-parser" }}
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "docling-parser",
+    "namespace": {{ .Release.Namespace | toJson }},
+    "labels": {
+      "app.kubernetes.io/managed-by": "Helm",
+      "app.kubernetes.io/part-of": "atlas-workspace-lab",
+      "atlas-lab/environment": {{ .Values.environment | toJson }}
+    },
+    "annotations": {
+      "meta.helm.sh/release-name": {{ .Release.Name | toJson }},
+      "meta.helm.sh/release-namespace": {{ .Release.Namespace | toJson }}
+    }
+  },
+  "spec": {
+    "replicas": {{ ternary 0 (int (index .Values.replicas "docling-parser")) .Values.stopped }},
+    "selector": {
+      "matchLabels": {
+        "app": "docling-parser"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "docling-parser",
+          "atlas-lab/environment": {{ .Values.environment | toJson }}
+        }
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "securityContext": {
+          "runAsNonRoot": true,
+          "runAsUser": 10001,
+          "runAsGroup": 10001,
+          "fsGroup": 10001,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "terminationGracePeriodSeconds": 30,
+        "containers": [
+          {
+            "name": "docling-parser",
+            "image": {{ index .Values.images "docling-parser" | toJson }},
+            "imagePullPolicy": "Never",
+            "env": [
+              {
+                "name": "PARSER_TOKEN_FILE",
+                "value": "/parser-keys/parser-token"
+              }
+            ],
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            },
+            "resources": {{ index .Values.resources "docling-parser" | toJson }},
+            "volumeMounts": [
+              {
+                "name": "tmp",
+                "mountPath": "/tmp"
+              },
+              {
+                "name": "parser-keys",
+                "mountPath": "/parser-keys",
+                "readOnly": true
+              }
+            ],
+            "ports": [
+              {
+                "containerPort": 8083
+              }
+            ],
+            "readinessProbe": {
+              "httpGet": {
+                "path": "/health/ready",
+                "port": 8083
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 3,
+              "failureThreshold": 6
+            },
+            "startupProbe": {
+              "httpGet": {
+                "path": "/health/ready",
+                "port": 8083
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 3,
+              "failureThreshold": 60
+            },
+            "livenessProbe": {
+              "httpGet": {
+                "path": "/health/live",
+                "port": 8083
+              },
+              "periodSeconds": 5,
+              "timeoutSeconds": 3,
+              "failureThreshold": 12
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "name": "tmp",
+            "emptyDir": {
+              "sizeLimit": "256Mi"
+            }
+          },
+          {
+            "name": "parser-keys",
+            "secret": {
+              "secretName": {{ index .Values.secretRefs "parser-access" | toJson }},
+              "defaultMode": 288
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+{{ end }}
