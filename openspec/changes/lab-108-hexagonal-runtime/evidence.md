@@ -11,8 +11,9 @@ completion, merge approval, migration cutover or production-readiness claim.
   `refactor/lab-108-hexagonal-runtime`. Original worktree edits and running user
   environments preserved.
 - Local `dev` bootstrapped from `origin/main` (`9e028c7`), with no misleading
-  upstream to main. No remote dev branch existed when inspected. No integration,
-  merge, archive, protection bypass or hosted run performed.
+  upstream to main. No remote dev branch existed initially; `dev` was subsequently created at the
+  same reviewed `main` commit. No integration, merge, archive, protection bypass
+  or hosted run performed.
 - The spec/governance branch predates ADR-0003 and is stacked on LAB-107 at
   `4e6a477`. Governance integration into reviewed dev is still outstanding;
   do not claim the required dev integration sequence has completed.
@@ -21,7 +22,7 @@ completion, merge approval, migration cutover or production-readiness claim.
 - Real Helm validation uses distinct kind cluster `atlas-lab-108`, namespace
   `atlas-dev`. Local prod-demo deployment is not part of this validation.
 - System Node cannot load ICU; checks use installed Node v24.22.1 via PATH.
-  No system environment repair or dependency-version change was made.
+  No system environment repair was made. A dependency security fix is recorded below.
 
 ## Completed local checks
 
@@ -38,31 +39,63 @@ completion, merge approval, migration cutover or production-readiness claim.
   including upload intent/idempotency/compensation, fenced outcomes, hidden staging,
   lost stage acknowledgement, real conditional object put, tenant/source binding,
   migration repeatability and compatibility restoration of new v2 copies.
-- Java source line coverage at the measured checkpoint: shared 95.09%, asset-service
-  93.00%, worker 86.75%, BFF 88.06%. All configured >=75% source gates passed.
+- Java source line coverage at the measured checkpoint: shared 94.64%, asset-service
+  93.14%, worker 86.75%, BFF 88.06%. All configured >=75% source gates passed.
   Branch coverage is a separate metric; no blanket >=75% branch claim is made.
 - HTTP tests enforce workload audience/subject, verified tenant mapping, bounded
   payloads, strict neutral versions and unavailable-content failure behavior.
 - Parser offline container tests: 20 passed; total measured Python coverage 92.25%.
   Pure application accepts a structural alternate converter; provider checks remain
   in the Docling adapter. No runtime model downloads or OCR were introduced.
-- Maintenance helper coverage: 87.12% lines / 84.15% branches. Owner processes receive
+- Maintenance helper coverage: 85.21% lines / 83.70% branches. Owner processes receive
   only required owner credentials; tests cover private snapshots, repeated migration,
   checksum verification, conservative reconciliation and restored replica counts.
-- Native Kubernetes tooling tests: three cases, 98.37% lines / 94.17% branches.
-  Helm helper tests passed before the latest configuration overrides; rerun required.
+- Native Kubernetes tooling tests: three cases, 96.86% lines / 94.17% branches.
+  Helm helper tests: two cases, 95.34% lines / 90.58% branches.
+  Fake-cluster helper tests explicitly clear real runtime overrides.
 - Frontend build/typecheck and tests passed; 100% lines / 95.4% branches.
+
+## Additional runtime and security evidence
+
+- Real dev Helm runtime suite: 11 passed, one cross-profile case intentionally
+  skipped in dev-only mode. It covers upload/read/tenant denial, duplicate outcomes,
+  worker restart, network denial, pod recreation, retained PVC stop/up, independent
+  Helm release upgrade/rollback and scoped source credentials.
+- Separate parser-substitution test exercises a neutral HTTP provider with no
+  Docling import or native JSON through unchanged worker, asset and BFF templates.
+  It also runs pause/drain, snapshots, restore-check, repeated migration,
+  checksum verification, rollback-copy and conservative reconciliation.
+  Final run outcome is reported with the clean candidate's CI/PR evidence.
+- Real backup restore-check restored both owner databases and the RustFS volume
+  into a separate randomly named Compose project, verified asset exports and
+  stopped the disposable containers. Private restore markers were produced.
+- New portable writes were restored byte-for-byte into the worker legacy reader
+  by the real rollback-copy command. Native-less rollback refusal is an explicit
+  negative scenario; no documents are fabricated or deleted.
+- Real storage tests verify that the derived identity cannot delete/list or write
+  source objects, and source identities cannot read derived content.
+- Independent `asset-service` image build/load/deploy and BFF component build passed.
+  Other service templates stay unchanged when only the selected parser changes.
+- Restore helper coverage: 100% lines/branches; independent build helper coverage:
+  100% lines / 91.67% branches; staging credential helper: 100% / 95.45%.
+- Dev Helm image/rendered-manifest/repository scans passed after fixing the HIGH
+  follow-redirects advisory GHSA-mrwp-f3q8-3g9p with the minimal lockfile/override
+  update from 1.16.1 to 1.16.2. No ignore rule or severity gate was weakened.
+  Primary advisory: https://github.com/follow-redirects/follow-redirects/security/advisories/GHSA-mrwp-f3q8-3g9p
+- Implementation self-review is recorded in architecture-review.md, including
+  manual Kafka consumer recovery and native-less compatibility limitations.
+  Independent human architecture/merge review remains required.
 
 ## Validation still required
 
 - Rerun affected checks after final edits and bind final evidence to a clean commit.
-- Complete dev Helm/native Kubernetes E2E and real staging identity/security checks;
-  prove alternate parser through the running worker with unchanged component images.
-- Exercise maintenance commands against the real cluster, restore backups into a
-  disposable environment and verify rollback after new writes, including refusal
-  for results without native JSON. Unit/integration tests alone do not prove backups.
-- Complete repository/image/manifest security scans and document actual findings.
-- Semantic architecture review, compliance matrix/runbook final review and PR to dev.
+- Complete the unified clean-candidate `make ci ENV=dev` run, including refreshed
+  Compose/native Kubernetes/dev Helm E2E and scans. Its exact revision and full
+  pass/fail outcome belong in the PR; individual earlier checks do not substitute
+  for a successful aggregate run. An earlier Compose run exposed stale v1 event
+  expectations and a too-short restart/UI wait; tests now use v2 and account for
+  Kafka rebalance plus bounded conversion without changing runtime deadlines.
+- PR to dev and independent human review. Architecture self-review is not approval.
 - Required hosted promotion checks run only on reviewed dev-to-main promotion, then
   human merge review. These are future release steps, never silently bypassed.
 

@@ -14,13 +14,13 @@
 - [x] Extract worker application/kernel and execution/publication/sandbox/source ports;
       preserve lease/fence/retries/cancellation and stable durable outcomes.
 - [x] Isolate Docling conversion adapter; add neutral parser v2 and substitution tests.
-- [ ] Implement asset-owned ArtifactStore/manifests/staging and scoped identities;
+- [x] Implement asset-owned ArtifactStore/manifests/staging and scoped identities;
       test real RustFS, corruption, cross-tenant denial and lost acknowledgements.
-- [ ] Add processed v2 consumer first, then worker publisher; prove crash recovery.
+- [x] Add processed v2 consumer first, then worker publisher; prove crash recovery.
 - [x] Add v2 reads, v1 compatibility, BFF routing and Make inspection commands.
-- [ ] Implement dev-only migration, snapshots/export/import verification and bounded
+- [x] Implement dev-only migration, snapshots/export/import verification and bounded
       dry-run reconciliation; prove repeatability and rollback including new writes.
-- [ ] Remove obsolete concrete code; update exact file roles, empty debt baseline
+- [x] Remove obsolete concrete code; update exact file roles, empty debt baseline
       only after all findings are gone; run strict full audit and semantic review.
 - [ ] Run meaningful happy/failure unit, integration, adapter/consumer contracts,
       >=75% measured source coverage, dev Kubernetes E2E and security checks locally.
